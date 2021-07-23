@@ -1,34 +1,34 @@
-name: Sysdig - Build, scan and push Docker Image
-
-on: [push, repository_dispatch]
-
-jobs:
-
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v1
-
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag sysdiglabs/dummy-vuln-app:latest
-
-    - name: Sysdig Secure Inline Scan
-      id: scan
-      uses: sysdiglabs/scan-action@v3
-      with:
-        run-as-user: root
-        sysdig-secure-url: https://us2.app.sysdig.com
-        # Tag of the image to analyse
-        image-tag: "sysdiglabs/dummy-vuln-app:latest"
-        # API token for Sysdig Scanning auth
-        sysdig-secure-token: ${{ secrets.KUBELAB_SECURE_API_TOKEN }}
-        dockerfile-path: ./Dockerfile
-        input-type: docker-daemon
-        ignore-failed-scan: true
-
-    - uses: github/codeql-action/upload-sarif@v1
-      if: always()
-      with:
-        sarif_file: ${{ steps.scan.outputs.sarifReport }}
+#name: Sysdig - Build, scan and push Docker Image
+#
+#on: [push, repository_dispatch]
+#
+#jobs:
+#
+#  build:
+#
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - uses: actions/checkout@v1
+#
+#    - name: Build the Docker image
+#      run: docker build . --file Dockerfile --tag sysdiglabs/dummy-vuln-app:latest
+#
+#    - name: Sysdig Secure Inline Scan
+#      id: scan
+#      uses: sysdiglabs/scan-action@v3
+#      with:
+#        run-as-user: root
+#        sysdig-secure-url: https://us2.app.sysdig.com
+#        # Tag of the image to analyse
+#        image-tag: "sysdiglabs/dummy-vuln-app:latest"
+#        # API token for Sysdig Scanning auth
+#        sysdig-secure-token: ${{ secrets.KUBELAB_SECURE_API_TOKEN }}
+#        dockerfile-path: ./Dockerfile
+#        input-type: docker-daemon
+#        ignore-failed-scan: true
+#
+#    - uses: github/codeql-action/upload-sarif@v1
+#      if: always()
+#      with:
+#        sarif_file: ${{ steps.scan.outputs.sarifReport }}
