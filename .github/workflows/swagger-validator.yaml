@@ -25,6 +25,6 @@ jobs:
         # Check only if there are differences in docs/* code
         if: ${{ env.GIT_DIFF_CONTENT }}
         run: |
-          npx speccy lint ${{ env.GIT_DIFF_CONTENT }}
-#          npx speccy resolve A/api.yml -o original-spec.yaml
-#          npx speccy resolve B/api.yml -o modified-spec.yaml
+#            npx speccy resolve docs/swagger-internal.yaml -o original-spec.yaml
+#            npx speccy resolve B/api.yml -o modified-spec.yaml
+            npx speccy lint docs/swagger.yaml
