@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: docs-api-ingress
+spec:
+  rules:
+    - host: secure.sysdig.com
+      http:
+        paths:
+          - backend:
+              serviceName: docs-api
+              servicePort: 80
+            path: /api/docs/secure
+  tls:
+    - hosts:
+        - app.sysdigcloud.com
+        - api.sysdigcloud.com
+        - secure.sysdig.com
+      secretName: ingress-controller/sysdig-ssl-secret

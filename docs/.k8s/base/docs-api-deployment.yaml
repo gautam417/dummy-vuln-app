@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-api
+  labels:
+    app: docs
+    role: docs-api
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 10
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: docs
+      role: docs-api
+  template:
+    metadata:
+      labels:
+        app: docs
+        role: docs-api
+    spec:
+      imagePullSecrets:
+        - name: sysdigcloud-pull-secret
+      containers:
+        - name: docs-api
+          image: quay.io/sysdig/api-docs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 12345
+              name: docs-api
+              protocol: TCP
+          env:
+            - name: MONITOR_BACKEND_SKIP_TLS
+              value: "false"
+          resources:
+            limits:
+              cpu: 0.5
+              memory: 250M
+            requests:
+              cpu: 300m
+              memory: 50M
+

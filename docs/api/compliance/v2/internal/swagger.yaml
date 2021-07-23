@@ -1,0 +1,727 @@
+openapi: 3.0.0
+info:
+  title: Compliance Secure Internal API
+  description: API for Compliance service
+  version: "v2"
+paths:
+  /api/compliance/v2/status:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Status"
+      description: Checks whether the Compliance V2 service is available or not.
+      responses:
+        "200":
+          description: Successfully returned compliance v2 status.
+          content:
+            application/json:
+              schema:
+                type: "object"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "503":
+          $ref: "#/components/responses/serviceUnavailable"
+  /api/compliance/v2/scopeOptions:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Scope Options"
+      description: >
+        Returns the list of available Scope Labels and Operators that can be used when creating a Benchmark Task.
+        If an optional 'framework' query param is provided, only Scope Labels relevant to that framework are returned, otherwise
+        all possible Scope Labels are returned.
+      parameters:
+        - name: "framework"
+          in: "query"
+          description: "Fetch the Scope Labels and Operators for this framework. Use a value returned from `/compliance/v2/frameworks`"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  labels:
+                    type: "array"
+                    description: "A list of supported Scope Labels"
+                    items:
+                      type: string
+                    example: [
+                        "host.hostName",
+                        "host.mac",
+                        "aws.account_id",
+                        "aws.region",
+                        "aws.instance_id",
+                        "kubernetes.cluster.name",
+                        "kubernetes.node.name"
+                    ]
+                  operators:
+                    type: "array"
+                    description: "A list of supported Scope Operators"
+                    items:
+                      type: string
+                    example: [ "in", "equals" ]
+        "401":
+          $ref: "#/components/responses/unauthorized"
+  /api/compliance/v2/frameworks:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "List Frameworks"
+      description: "Returns the list of available Frameworks."
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: object
+                  properties:
+                    framework:
+                      type: string
+                      description: "The internal Framework identifier"
+                    displayName:
+                      type: string
+                      description: "The Framework display name"
+                    link:
+                      type: string
+                      description: "A link to the official standard"
+                example:
+                  - framework: "kube_bench_cis-1.5"
+                    displayName: "CIS Kubernetes Benchmark 1.5"
+                    link: "https://www.cisecurity.org/benchmark/kubernetes/"
+                  - framework: "kube_bench_cis-1.6"
+                    displayName: "CIS Kubernetes Benchmark 1.6"
+                    link: "https://www.cisecurity.org/benchmark/kubernetes/"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+  /api/compliance/v2/frameworks/{frameworkId}:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Get Framework Controls"
+      description: "Returns the list of Controls in a given Framework grouped by Family."
+      parameters:
+        - name: "frameworkId"
+          in: "path"
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: object
+                  properties:
+                    familyId:
+                      type: string
+                      description: "The ID of the family."
+                    title:
+                      type: string
+                      description: "The Title (name) of the family."
+                    controls:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          controlId:
+                            type: string
+                            description: "The ID of the control."
+                          title:
+                            type: string
+                            description: "The Title (name) of the control."
+                          level:
+                            type: string
+                            description: "The CIS Level of the control."
+                example:
+                  - familyId: "1.1"
+                    title: "Master Node Configuration Files"
+                    controls:
+                      - controlId: "1.1.1"
+                        title: "Ensure that the API server pod specification file permissions are set to 644 or more restrictive"
+                        level: "Level 1"
+                      - controlId: "1.1.2"
+                        title: "Ensure that the API server pod specification file ownership is set to root:root"
+                        level: "Level 1"
+                  - familyId: "1.2"
+                    title: "API Server"
+                    controls:
+                      - controlId: "1.2.1"
+                        title: "Ensure that the --anonymous-auth argument is set to false"
+                        level: "Level 1"
+                      - controlId: "1.2.2"
+                        title: "Ensure that the --basic-auth-file argument is not set"
+                        level: "Level 1"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+  /api/compliance/v2/tasks:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "List Tasks"
+      description: "Fetches a list of Benchmark and Compliance Tasks"
+      parameters:
+        - name: "filter"
+          in: "query"
+          description: "Free text filter. Searches the following fields: `name`, `scope`"
+          required: false
+          schema:
+            type: "string"
+        - name: "framework"
+          in: "query"
+          description: "Filter by framework. Valid list returned by `/compliance/v2/frameworks` endpoint."
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/TaskResponseBody'
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+    post:
+      tags: [ "Compliance V2" ]
+      summary: "Create Task"
+      description: "Creates a new Benchmark or Compliance Task"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskBody'
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponseBody'
+        "401":
+          $ref: "#/components/responses/unauthorized"
+  /api/compliance/v2/tasks/{taskId}:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Get Task"
+      description: "Fetches a Benchmark or Compliance Task by Id"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponseBody'
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+    delete:
+      tags: [ "Compliance V2" ]
+      summary: "Delete Task"
+      description: "Delete Benchmark or Compliance Task with specified task Id. If task has reports then the report must be deleted before deleting the task"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+  /api/compliance/v2/tasks/{taskId}/enable:
+    put:
+      tags: [ "Compliance V2" ]
+      summary: "Enable Task"
+      description: "Enables the Benchmark or Compliance Task with specified task Id. If the task is already enabled, this is a no-op."
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+  /api/compliance/v2/tasks/{taskId}/disable:
+    put:
+      tags: [ "Compliance V2" ]
+      summary: "Disable Task"
+      description: "Disables the Benchmark or Compliance Task with specified task Id. If the task is already disabled, this is a no-op."
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+  # TODO (Gautam): Support this endpoint in compliance v2, however need to simplify the backwards compatibility to make
+  # it easier on FE
+  /api/compliance/v2/tasks/{taskId}/run:
+    post:
+      tags: [ "Compliance V2" ]
+      summary: "Run now"
+      description: "Runs the Benchmark or Compliance Task with the specified task Id. If its a Compliance Task
+      then this endpoint will return a 403 status code. This endpoint will return a 200 status code if it is a Host Benchmark."
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: "Set to True if the run request was successfully enqueued"
+                  runID:
+                    type: string
+                    description: "The run ID (and ensuing report ID) that was created. Present IFF `success=true`."
+                    example: "674088d3-c9a8-4f04-b47a-5ade04d36faf"
+                  errMsg:
+                    type: string
+                    description: "A description of what went wrong. Present IFF `success=false`."
+                    example: "could not contact redis"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          description: >
+            Status Forbidden: Returned when the endpoint is provided a compliance task Id.
+        "404":
+          $ref: "#/components/responses/notFound"
+  # TODO (Gautam): Eventually we will deprecate get latest report in compliance/v2
+  /api/compliance/v2/tasks/{taskId}/report:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Get most recent Report ID"
+      description: "Fetches most recent report Id, and optionally redirects to the correct `/tasks/{taskId}/reports/{reportId}` URL"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+        - name: "redirect"
+          in: "query"
+          required: false
+          schema:
+            type: "boolean"
+      responses:
+        "200":
+          description: "Returned when `redirect` is false or not provided."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lastRunId:
+                    type: string
+                    description: "The most recent run (report) ID"
+                    example: "674088d3-c9a8-4f04-b47a-5ade04d36faf"
+        "204":
+          description: "Returned when task does not exist, or it has not yet been run"
+        "302":
+          description: "Returned when `redirect` is true. Redirects the browser to the URL with latest reportId"
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/api/compliance/v2/tasks/1/reports/10"
+  /api/compliance/v2/tasks/{taskId}/reports/{reportId}:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Get Report"
+      description: "Fetches Benchmark or Compliance Report"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+        - name: "reportId"
+          description: "Load the report with the report Id. Used when the Evaluation Date dropdown is changed. If this parameter is not provided, the most recent report for the given task will be returned."
+          required: true
+          in: "path"
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/Report'
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+  /api/compliance/v2/tasks/{taskId}/reports/{reportId}/csv:
+    get:
+      tags: [ "Compliance V2" ]
+      summary: "Download CSV"
+      description: "Downloads a CSV of a specific set of Benchmark or Compliance Reports"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+        - name: "reportId"
+          description: "Download the report with the report Id. Used when the Evaluation Date dropdown is changed. If this parameter is not provided, the most recent report for the given task will be returned."
+          required: false
+          in: "query"
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/csv:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notFound"
+components:
+  schemas:
+    CreateTaskBody:
+      type: "object"
+      required:
+        - "name"
+        - "schedule"
+        - "framework"
+        - "state"
+      properties:
+        name:
+          type: "string"
+          example: "Kube-bench Production"
+        schedule:
+          $ref: '#/components/schemas/CronExpression'
+        framework:
+          $ref: '#/components/schemas/Framework'
+        scope:
+          type: "string"
+          example: >
+            kubernetes.cluster.name="production"
+        enabled:
+          type: "boolean"
+          default: true
+        excludeControlList:
+          type: array
+          description: A list of controlIDs to be excluded
+          items:
+            type: string
+          example:
+            - "1.1.1.a"
+            - "1.2.2"
+        # NOTE (Gautam): Possible states include pending/stopped/running
+        state:
+          type: "string"
+          default: "pending"
+    TaskResponseBody:
+      allOf:
+        - $ref: '#/components/schemas/CreateTaskBody'
+        - type: object
+          required:
+            - "id"
+            - "createdOn"
+            - "modifiedOn"
+          properties:
+            id:
+              type: "integer"
+              example: 1
+            # TODO (Gautam): Remove nodeCount after verifying no longer supported
+            nodeCount:
+              type: "integer"
+              example: 1572
+            passPercent:
+              type: "integer"
+              example: 72
+            createdOn:
+              type: "string"
+              format: "date-time"
+            modifiedOn:
+              type: "string"
+              format: "date-time"
+            lastRunOn:
+              type: "string"
+              format: "date-time"
+    Report:
+      required:
+        - "id"
+        - "taskId"
+        - "success"
+        - "startedAt"
+        - "completedAt"
+        - "failureDetails"
+        - "counts"
+        - "countLabel"
+        - "otherReportByAccount"
+        - "families"
+        - "labels"
+      properties:
+        id:
+          type: "number"
+          example: 9
+        taskId:
+          type: "number"
+          example: 2
+        success:
+          type: "boolean"
+          example: true
+        startedAt:
+          type: "string"
+          example: "2020-11-15T01:16:02.469729Z"
+        completedAt:
+          type: "string"
+          example: "2020-11-15T01:16:02.984179Z"
+        failureDetails:
+          type: "string"
+          example: "incomplete"
+        counts:
+          type: "object"
+          properties:
+            resources:
+              $ref: '#/components/schemas/Counts'
+            controls:
+              $ref: '#/components/schemas/Counts'
+        countLabel:
+          type: "string"
+          example: "resources"
+          description: "Controls if counts.resources or counts.controls is displayed in the UI. Must be either 'resources' or 'counts'"
+        otherReportByAccount:
+          $ref: '#/components/schemas/OtherReportByAccount'
+        labels:
+          type: "object"
+          description: "A key value map of labels and their values."
+          properties:
+            aws.accountId:
+              type: "string"
+              example: "411571310278"
+            aws.region:
+              type: "string"
+              example: "us-east-1"
+        families:
+          type: array
+          items:
+            $ref: '#/components/schemas/AwsFamily'
+    Counts:
+      type: "object"
+      required:
+        - "passPercent"
+        - "passCount"
+        - "warnCount"
+        - "failCount"
+      properties:
+        passPercent:
+          type: "number"
+          example: 81
+        passCount:
+          type: "number"
+          example: 1847
+        warnCount:
+          type: "number"
+          example: 0
+        failCount:
+          type: "number"
+          example: 416
+    CronExpression:
+      type: string
+      pattern: "^[0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+$"
+      description: "A cron-like expression representing a frequency."
+      example: "0 9 * * 1"
+    Framework:
+      type: "string"
+      description: "Benchmark Framework"
+      enum:
+        - "kube_bench_cis-1.5"
+        - "kube_bench_cis-1.6"
+        - "kube_bench_gke-1.0"
+        - "kube_bench_eks-1.0"
+        - "kube_bench_rh-0.7"
+        - "linux_bench_cis-1.1"
+        - "docker_bench_security_1.0"
+        - "aws_foundations_bench-1.3"
+    OtherReportByAccount:
+      type: object
+      description: "A map with keys corresponding to AWS Account Ids"
+      additionalProperties:
+        type: object
+        description: "A map with keys corresponding to AWS Regions"
+        additionalProperties:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: number
+                example: 45
+              startedOn:
+                type: string
+                example: "2021-02-22T20:10:33.702261Z"
+      example:
+        059797578166:
+          us-east-1:
+            - id: 45
+              startedOn: "2021-02-22T20:10:33.702261Z"
+            - id: 23
+              startedOn: "2021-02-22T20:10:33.702261Z"
+          us-west-2:
+            - id: 78
+              startedOn: "2021-02-22T20:10:33.702261Z"
+        411571310278:
+          us-east-1:
+            - id: 3
+              startedOn: "2021-02-22T20:10:33.702261Z"
+    AwsFamily:
+      type: object
+      properties:
+        familyName:
+          type: string
+          example: "Identity and Access Management"
+        pass:
+          type: number
+          example: 54
+        fail:
+          type: number
+          example: 12
+        warn:
+          type: number
+          example: 0
+        controls:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: "string"
+                example: "cis-5-1"
+              id:
+                type: "string"
+                example: "5.1"
+              title:
+                type: "string"
+                example: "Ensure no Network ACLs allow ingress from 0.0.0.0/0 to remote server administration ports"
+              description:
+                type: "string"
+                example: "The Network Access Control List (NACL) function provide stateless filtering of ingress and egress network traffic to AWS resources. It is recommended that no NACL allows unrestricted ingress access to remote server administration ports, such as SSH to port 22 and RDP to port 3389."
+              rationale:
+                type: "string"
+                example: "Public access to remote server administration ports, such as 22 and 3389, increases resource attack surface and unnecessarily raises the risk of resource compromise."
+              result:
+                type: "string"
+                example: "Fail"
+              level:
+                type: "string"
+                example: "Level 1"
+              familyName:
+                type: "string"
+                example: "Networking"
+              resourceName:
+                type: "string"
+                example: "security-group"
+              resources:
+                type: "array"
+                items:
+                  additionalProperties:
+                    type: string
+              remediation:
+                type: "string"
+                example: "increases resource attack surface and unnecessarily raises the risk of resource compromise."
+              metrics:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    metricName:
+                      type: "string"
+                      example: "ResourceCount"
+                    timestamp:
+                      type: "string"
+                      example: "2020-11-13T02:57:43.748882"
+                    value:
+                      type: "number"
+                      example: 4
+                    unit:
+                      type: "string"
+                      example: "Count"
+              metadata:
+                required:
+                  - "account_id"
+                  - "region"
+                  - "regions"
+                properties:
+                  account_id:
+                    type: "string"
+                    example: "845151661675"
+                  region:
+                    type: "string"
+                    example: "us-east-2"
+                  regions:
+                    type: "array"
+                    items:
+                      type: "string"
+                    example:
+                      - "us-east-2"
+                type: "object"
+              totalResourceCount:
+                type: "number"
+                example: 13
+              totalResourceFailedCount:
+                type: "number"
+                example: 4
+
+  responses:
+    badRequest:
+      description: The given request is invalid.
+    notFound:
+      description: The compliance info could not be found.
+    unauthorized:
+      description: Invalid or missing auth token.
+    forbidden:
+      description: Forbidden access to view Compliance v2.
+    serviceUnavailable:
+      description: Service is unavailable.
+

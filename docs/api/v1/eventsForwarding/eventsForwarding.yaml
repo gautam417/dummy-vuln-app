@@ -1,0 +1,348 @@
+openapi: 3.0.0
+info:
+  title: Events Forwarding Secure API
+  description: API for Events Forwarding service
+paths:
+  api/v1/eventsForwarding/supported:
+    get:
+      summary: Retrieve a list of the supported targets.
+      description: |
+        Retrieves a list of all the supported forwarding targets.
+      tags:
+        - Events Forwarding
+      responses:
+        200:
+          description: List of supported forwarding targets.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - syslog
+                  - splunk
+        400:
+          $ref: "#/components/responses/badRequest"
+  api/v1/eventsForwarding/channels:
+    get:
+      summary: Retrieve a list of the supported channels.
+      description: |
+        Retrieves a list of all the supported forwarding channels.
+      tags:
+        - Events Forwarding
+      responses:
+        200:
+          description: List of supported forwarding channels.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - POLICY_EVENTS
+        400:
+          $ref: "#/components/responses/badRequest"
+  api/v1/eventsForwarding/integrations:
+    get:
+      summary: Retrieve a list of integrations for the customer.
+      description: |
+        Retrieves a list of forwarding integrations for the customer making the
+        request.
+      tags:
+        - Events Forwarding
+      responses:
+        200:
+          description: The list of integrations.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/integration"
+        400:
+          $ref: "#/components/responses/badRequest"
+    post:
+      summary: Create an integration for the customer.
+      description: |
+        Creates a forwarding integration for the customer.
+      tags:
+        - Events Forwarding
+      requestBody:
+        description: |
+          The content of the integration to create.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createPayload"
+      responses:
+        201:
+          description: |
+            The creation of the integration was successful.
+          headers:
+            Location:
+              schema:
+                type: string
+                example: /api/v1/eventsForwarding/integrations/1
+              description: |
+                Where to find the integration newly created
+        400:
+          $ref: "#/components/responses/badRequest"
+  api/v1/eventsForwarding/integrations/{integrationId}:
+    get:
+      summary: Retrieve an integration given its id.
+      description: |
+        Retrieves a forwarding rule given its id.
+      tags:
+        - Events Forwarding
+      parameters:
+        - $ref: "#/components/parameters/integrationId"
+      responses:
+        200:
+          description: The forwarding integration with a given id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/integration"
+        404:
+          $ref: "#/components/responses/notFound"
+    patch:
+      summary: Update an integration given its id.
+      description: |
+        Updates an integration given its id. The `PATCH` payload can be any
+        combination of the following fields having the value to change.
+        None of the `connectionInfo` fields are required for patching.
+      tags:
+        - Events Forwarding
+      parameters:
+        - $ref: "#/components/parameters/integrationId"
+      requestBody:
+        description: |
+          The content of the integration to update.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patchPayload"
+      responses:
+        204:
+          description: |
+            The integration was successfully updated.
+          headers:
+            Location:
+              schema:
+                type: string
+                example: /api/v1/eventsForwarding/integrations/1
+              description: |
+                Where to find the integration updated
+        404:
+          $ref: "#/components/responses/notFound"
+    delete:
+      summary: Delete an integration given its id.
+      description: |
+        Delete an integration given its id.
+      tags:
+        - Events Forwarding
+      parameters:
+        - $ref: "#/components/parameters/integrationId"
+      responses:
+        201:
+          description: |
+            The integration was successfully deleted.
+        404:
+          $ref: "#/components/responses/notFound"
+components:
+  schemas:
+    channels:
+      description: |
+        The channels for which the integration must forward data from.
+      type: array
+      items:
+        type: string
+        enum:
+          - POLICY_EVENTS
+    integrationType:
+      description: |
+        The integration type.
+      type: string
+      enum:
+        - SYSLOG
+        - SPLUNK
+        - MCM
+        - QRADAR
+    createPayload:
+      description: |
+        The payload for creating an integration.
+      type: object
+      required:
+        - name
+        - type
+        - channels
+        - connectionInfo
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/integrationType"
+        enabled:
+          type: boolean
+          default: false
+        channels:
+          $ref: "#/components/schemas/channels"
+        connectionInfo:
+          $ref: "#/components/schemas/connectionInfo"
+      example:
+        name: Forward to Syslog
+        type: SYSLOG
+        enabled: true
+        channels:
+          - POLICY_EVENTS
+        connectionInfo:
+          ServiceURL: syslog-address
+          ServicePort: 514
+    patchPayload:
+      description: |
+        The payload for updating an integration.
+      type: object
+      properties:
+        name:
+          description: Change the name of the integration.
+          type: string
+        enabled:
+          description: Enable/disable the integration.
+          type: boolean
+        channels:
+          $ref: "#/components/schemas/channels"
+        connectionInfo:
+          $ref: "#/components/schemas/connectionInfo"
+      example:
+        enabled: true
+    connectionInfo:
+      oneOf:
+        - $ref: "#/components/schemas/syslogConnectionInfo"
+        - $ref: "#/components/schemas/splunkConnectionInfo"
+        - $ref: "#/components/schemas/mcmConnectionInfo"
+        - $ref: "#/components/schemas/qradarConnectionInfo"
+    syslogConnectionInfo:
+      required:
+        - ServiceURL
+        - ServicePort
+      properties:
+        ServiceURL:
+          type: string
+        ServicePort:
+          type: number
+          format: integer
+        ServiceType:
+          type: string
+          enum:
+            - tcp
+            - udp
+            - tls
+        insecure:
+          type: boolean
+        MessageFormat:
+          type: string
+          enum:
+            - RFC_3164
+            - RFC_5424
+            - RFC_5425
+    splunkConnectionInfo:
+      required:
+        - ServiceURL
+        - ServiceToken
+      properties:
+        ServiceURL:
+          type: string
+        ServiceToken:
+          type: string
+        SourceType:
+          type: string
+        Index:
+          type: string
+        insecure:
+          type: boolean
+    mcmConnectionInfo:
+      required:
+        - endpoint
+        - apiKey
+      properties:
+        endpoint:
+          type: string
+        apiKey:
+          type: string
+        insecure:
+          type: boolean
+        accountId:
+          type: string
+        providerId:
+          type: string
+        noteName:
+          type: string
+    qradarConnectionInfo:
+      required:
+        - address
+        - port
+      properties:
+        address:
+          type: string
+        port:
+          type: number
+          format: integer
+        insecure:
+          type: boolean
+    integration:
+      description: |
+        Represents a command execution.
+      type: object
+      properties:
+        id:
+          type: number
+          format: integer
+        name:
+          type: string
+        customerId:
+          type: number
+          format: integer
+        type:
+          $ref: "#/components/schemas/integrationType"
+        enabled:
+          type: boolean
+        channels:
+          $ref: "#/components/schemas/channels"
+        connectionInfo:
+          $ref: "#/components/schemas/connectionInfo"
+      example:
+        id: 1
+        name: Forward to Syslog
+        customerId: 1
+        type: "syslog"
+        enabled: true
+        channels:
+          - POLICY_EVENTS
+        connectionInfo:
+          ServiceURL: syslog-address
+          ServicePort: 514
+  parameters:
+    integrationId:
+      name: integrationId
+      description: The forwarding integration id.
+      required: true
+      in: path
+      schema:
+        type: integer
+        example: 1
+  responses:
+    badRequest:
+      description: The request is invalid.
+    notFound:
+      description: The integration could not be found.
+
+  tags:
+    eventsforwarding:
+      name: Events Forwarding
+      description: >
+        The events forwarding API allows retrieving, creating, deleting and
+        updating integrations.

@@ -1,0 +1,34 @@
+{{- if and (contains "secure" .Values.apps) (.Values.sysdig.secure.apiDocs.enabled) }}
+{{- if and (eq .Values.deployment "iks") (ne .Values.sysdig.ingressNetworking "external") }}
+{{- if .Values.sysdig.iks.legacyIngressEnabled }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.bluemix.net/large-client-header-buffers: number=4 size=32k
+    ingress.bluemix.net/redirect-to-https: "True"
+    ingress.bluemix.net/sticky-cookie-services: serviceName=sysdigcloud-api name=ibm-sysdigcloud-api
+      expires=24h path=/ hash=sha1
+    ingress.bluemix.net/proxy-add-headers: |
+      serviceName=sysdigcloud-api {
+      X-Private-Endpoint "false";
+      }
+  name: sysdigcloud-api-docs-ingress
+  namespace: {{ .Values.namespace }}
+spec:
+  rules:
+    - host: {{ .Values.sysdig.dnsName }}
+      http:
+        paths:
+          - backend:
+              serviceName: sysdigcloud-api-docs
+              servicePort: 80
+            path: /api/docs/secure
+  tls:
+    - hosts:
+        - {{ .Values.sysdig.dnsName }}
+      secretName: sysdigcloud-ssl-secret
+{{- end }}
+{{- end }}
+{{- end }}

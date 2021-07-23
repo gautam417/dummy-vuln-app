@@ -1,0 +1,742 @@
+openapi: 3.0.0
+info:
+  title: Topology API
+  description: API for Networking Topology
+  version: v1
+paths:
+  /api/v1/networkTopology/clusters:
+    get:
+      summary: Returns all cluster names for the customer
+      description: Returns all cluster names for the customer
+      tags:
+        - Network Topology
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested cluster names were successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClustersResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/networkTopology/namespaces:
+    get:
+      summary: Returns all namespace names for the cluster
+      description: Returns all namespace names for the cluster
+      tags:
+        - Network Topology
+      parameters:
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested namespaces were successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NamespacesResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/networkTopology/owners:
+    get:
+      summary: Returns all pod owners for a cluster, namespace, and time range
+      tags:
+        - Network Topology
+      description: Returns a map of owner type to a list of owner selectors
+      parameters:
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested map of owner type to a list of owner selectors were successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnersResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/networkTopology/ingressSummaries:
+    get:
+      summary: Returns an overview of ingress networking traffic
+      tags:
+        - Network Topology
+      description: Returns an overview of ingress networking traffic
+      parameters:
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/kind"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested overview of ingress networking traffic was successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngressSummary"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/networkTopology/egressSummaries:
+    get:
+      summary: Returns an overview of egress networking traffic
+      tags:
+        - Network Topology
+      description: Returns an overview of egress networking traffic
+      parameters:
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/kind"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested overview of egress networking traffic was successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EgressSummary"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/networkTopology/ingressUnresolvedIps:
+    get:
+      summary: Returns the unresolved ips for a time range and pod owner
+      tags:
+        - Network Topology
+      description: Returns the unresolved ips for a time range and pod owner
+      parameters:
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/kind"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested ingress unresolved ips were successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EgressUnresolvedIpsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/networkTopology/egressUnresolvedIps:
+    get:
+      summary: Returns the unresolved ips for a time range and pod owner
+      tags:
+        - Network Topology
+      description: Returns the unresolved ips for a time range and pod owner
+      parameters:
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/kind"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested egress unresolved ips were successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngressUnresolvedIpsResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/networkTopology/ownerTopology:
+    get:
+      summary: Creates a communication topology graph around the specified owner
+      tags:
+        - Network Topology
+      description: Creates a communication topology graph around the specified owner
+      parameters:
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/kind"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      responses:
+        200:
+          description: Indicates the requested topology graph is sucessfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/networkTopology/status:
+    get:
+      summary: Ping the status
+      tags:
+        - Network Topology
+      description: |
+        Retrieves a 200 to double check if the topology feature on the
+        backend is available.
+      responses:
+        200:
+          description: Indicates the topology feature is available
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: The status.
+                    enum:
+                      - ok
+                    example: ok
+  /api/v1/networkTopology/workloadLabelKeys:
+     get:
+       summary: Returns sorted list of unique workload label key values 
+       tags:
+       - Network Topology
+       description: Returns sorted list of unique workload label key values
+       parameters: 
+        - $ref: "#/components/parameters/cluster"
+       responses:
+         200:
+           description: Indicates the requested list was returned 
+           content:
+             application/json:
+               schema:
+                 $ref: "#/components/schemas/Labels"
+         400:
+           $ref: '#/components/responses/BadRequest'
+         401:
+           $ref: '#/components/responses/Unauthorized'
+         403:
+           $ref: '#/components/responses/Forbidden'
+  /api/v1/networkTopology/namespaceLabelKeys:
+    get:
+      summary: Returns sorted list of unique namespace label key values 
+      tags:
+      - Network Topology
+      description: Returns sorted list of unique namespace label key values
+      parameters: 
+        - $ref: "#/components/parameters/cluster"
+      responses:
+        200:
+          description: Indicates the requested list was returned 
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Labels"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/networkTopology/customerConfig:
+     get:
+       summary: Returns configuration for the customer
+       description: Returns configuration for the customer
+       tags:
+       - Network Topology
+       responses:
+         200:
+           description: Indicates that configuration for the customer was successfully returned
+           content:
+             application/json:
+               schema:
+                 $ref: "#/components/schemas/CustomerConfig"
+         400:
+           $ref: "#/components/responses/BadRequest"
+         401:
+           $ref: "#/components/responses/Unauthorized"
+         403:
+           $ref: "#/components/responses/Forbidden"
+     put:
+       summary: Update configuration for the customer
+       description: Update configuration for the customer
+       tags:
+       - Network Topology
+       requestBody: 
+         content:
+           application/json:
+             schema:
+               $ref: "#/components/schemas/CustomerConfig"
+       responses:
+         200:
+           description: Successfully updated customer configuration 
+           content:
+             application/json:
+               schema:
+                 $ref: "#/components/schemas/CustomerConfig"
+         400:
+           $ref: "#/components/responses/BadRequest"
+         401:
+           $ref: "#/components/responses/Unauthorized"
+         403:
+           $ref: "#/components/responses/Forbidden"
+components:
+  parameters:
+    cluster:
+      name: cluster
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The name of a kubernetes cluster
+    namespace:
+      name: namespace
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The name of a kubernetes namespace
+    name:
+      name: name
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The name of a pod owner
+    kind:
+      name: kind
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - Service
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+          - Pod
+          - Namespace
+      description: Specifies how to group pods
+    from:
+      name: from
+      in: query
+      required: true
+      schema:
+        type: integer
+      description: A unix timestamp in seconds of specifying the initial time of a range
+    to:
+      name: to
+      in: query
+      required: true
+      schema:
+        type: integer
+      description: A unix timestamp in seconds of specifying the end time of a range
+
+  responses:
+    BadRequest:
+      description: Indicates a parameter, header or another quality of the request was malformed. More information about 400 can be found at https://httpstatuses.com/400
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: The user failed to authenticate. More information about 401 can be found at https://httpstatuses.com/401
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: The user successfully authenticated but has insufficient permissions. More information about 403 can be found at https://httpstatuses.com/403
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: a human readable description of the error
+          example: startDate cannot be more than 90 days earlier than endDate
+        referenceId:
+          type: string
+          description: Reference id for error tracking
+          example: d2c5bb61-8b51-4b58-ad9d-1412b63e75de
+    ClustersResponse:
+      type: array
+      description: Cluster names
+      items:
+        type: string
+    NamespacesResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/Namespace"
+    OwnersResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/PodOwner"
+    IngressUnresolvedIpsResponse:
+      type: object
+      properties:
+        clusterSubnetsComplete:
+          type: boolean
+          description: If false, the FE will display the warning “Cluster subnet list is incomplete. IPs not mapping to known subnets will be marked as external”.
+        unresolveds:
+          type: array
+          description: Collection of unresolved ingress IPs
+          items:
+            $ref: "#/components/schemas/UnresolvedIngress"
+    EgressUnresolvedIpsResponse:
+      type: object
+      properties:
+        clusterSubnetsComplete:
+          type: boolean
+          description: If false, the FE will display the warning “Cluster subnet list is incomplete. IPs not mapping to known subnets will be marked as external”.
+        unresolveds:
+          type: array
+          description: Collection of unresolved egress IPs
+          items:
+            $ref: "#/components/schemas/UnresolvedEgress"
+
+    CommonKubernetesEntity:
+      type: object
+      properties:
+        name:
+          type: string
+          description: name of the object
+        labels:
+          $ref: "#/components/schemas/Labels"
+          description: For pod owners, the labels are used to identify the pods related to the deployment/job/etc. For services, the labels are used to identify the endpoints for the service. For namespaces, the labels will be put in any knp generated based on objects in this namespace.
+        excludedLabels:
+          $ref: '#/components/schemas/Labels'
+          description: Labels excluded due to label filter.
+        kind:
+          $ref: "#/components/schemas/OwnerKind"
+        cluster:
+          type: string
+          description: the name of the cluster
+    Namespace:
+      allOf:
+        - $ref: "#/components/schemas/CommonKubernetesEntity"
+        - type: object
+    PodOwner:
+      allOf:
+        - $ref: "#/components/schemas/CommonKubernetesEntity"
+        - type: object
+          properties:
+            namespace:
+              type: string
+              description: the name of the namespace that the pod owner belongs to
+            podControllerLabels:
+              $ref: "#/components/schemas/PodControllerLabels"
+    Labels:
+      type: array
+      items:
+        type: string
+      description: Array of kubernetes labels
+    PodControllerLabels:
+      allOf:
+        - $ref: "#/components/schemas/Labels"
+      description: Kubernetes labels of the pod controller. If the pod owner is a service, the labels are for the pod owner of the service’s endpoint.
+    OwnerKind:
+      type: string
+      description: Owner type
+      enum:
+        - Service
+        - Deployment
+        - StatefulSet
+        - DaemonSet
+        - Pod
+        - Namespace
+    IngressSummary:
+      type: object
+      properties:
+        metadata:
+          $ref: "#/components/schemas/NetworkingTopologyMetadata"
+        connections:
+          type: array
+          items:
+            $ref: "#/components/schemas/IngressConnectionSummary"
+    IngressConnectionSummary:
+      type: object
+      properties:
+        clientOwner:
+          $ref: "#/components/schemas/PodOwner"
+        clientNamespace:
+          $ref: "#/components/schemas/Namespace"
+        serverProcess:
+          type: string
+          description: The process on the server
+          example: "nginx"
+        serverPort:
+          type: number
+          description: The port on the server
+        rowId:
+          type: string
+          description: Resovled ingress connection identifier, always starts with "ir_"
+    EgressSummary:
+      type: object
+      properties:
+        metadata:
+          $ref: "#/components/schemas/NetworkingTopologyMetadata"
+        connections:
+          type: array
+          items:
+            $ref: "#/components/schemas/EgressConnectionSummary"
+    EgressConnectionSummary:
+      type: object
+      properties:
+        serverOwner:
+          $ref: "#/components/schemas/PodOwner"
+        serverNamespace:
+          $ref: "#/components/schemas/Namespace"
+        clientProcess:
+          type: string
+          description: The process on the client
+          example: "nginx"
+        serverPort:
+          type: number
+          description: The port on the server
+        rowId:
+          type: string
+          description: Resovled egress connection identifier, always starts with "er_"
+    UnresolvedIngress:
+      type: object
+      properties:
+        clientIPMetadata:
+          $ref: "#/components/schemas/IPMetadata"
+        serverProcess:
+          type: string
+          description: Comma-separated list of processes on the server
+        serverPort:
+          $ref: '#/components/schemas/NetworkPolicyPort'
+        rowId:
+          type: string
+          description: Unresolved ingress connection identifier, always starts with "iu_"
+    UnresolvedEgress:
+      type: object
+      properties:
+        serverIPMetadata:
+          $ref: "#/components/schemas/IPMetadata"
+        clientProcess:
+          type: string
+          description: Comma-separated list of processes on the client
+        serverPort:
+          $ref: '#/components/schemas/NetworkPolicyPort'
+        rowId:
+          type: string
+          description: Unresolved egress connection identifier, always starts with "eu_"
+    IPMetadata:
+      type: object
+      properties:
+        origin:
+          type: string
+          description: IP origin, or comma separated list of IP origins
+          enum:
+            - internal
+            - external
+            - unknown
+        ip:
+          type: string
+          description: Comma separated list of IP adresses
+        alias:
+          type: string
+          description: Alias (or label) for these IP addresses. If empty or missing - no alias.
+    NetworkPolicyPort:
+      type: object
+      properties:
+        port:
+          type: integer
+          description: port on the pod
+        protocol:
+          type: string
+          description: The protocol by which traffic must match. Defaults to TCP if not specified. In the future UDP and SCTP may be supported.
+          enum:
+            - TCP
+
+    NetworkingTopologyMetadata:
+      type: object
+      properties:
+        resolvedFrom:
+          type: integer
+          description: The from parameter after being normalized to fit the closest approximate available time range
+        resolvedTo:
+          type: integer
+          description: The to parameter after being normalized to fit the closest approximate available time range
+    Metadata:
+      description: Metadata, could be attached to a graph, an edge, or a vertex. If present, vertex metadata 'matchLabels' contains a list of included workload or namespace labels. If present, vertex metadata 'excludedLables' contains a list of excluded workload or namespace labels. If present, vertex metadata 'alias' contains an alias for a vertex of type 'unresolvedip'. If present, edge metadata 'rowId' relates a graph communication edge to one of the following`:` IngressConnectionSummary, EgressConnectionSummary, UnresolvedIngress, or UnresovledEgress.
+      type: object
+      additionalProperties:
+        type: string
+    Edge:
+      type: object
+      description: A directed edge, indicates a relationship between two vertices
+      properties:
+        type:
+          $ref: "#/components/schemas/EdgeType"
+        source:
+          type: string
+          description: ID of the source vertex
+        destination:
+          type: string
+          description: ID of the destination vertex
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+    EdgeType:
+      type: string
+      enum: ["endpoints", "communication"]
+      description: Type of edge relationship
+    VertexType:
+      type: string
+      enum:
+        [
+          "service",
+          "deployment",
+          "statefulset",
+          "daemonset",
+          "namespace",
+          "unresolvedip",
+        ]
+      description: Vertex type
+    Vertex:
+      type: object
+      description: Pod Owner
+      properties:
+        id:
+          type: string
+          description: Vertex ID
+        type:
+          $ref: "#/components/schemas/VertexType"
+        name:
+          type: string
+          description: Pod Owner name, or IP for `unresolvedip` type, or an alias for for a group of unresolved IPs
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        parent:
+          type: string
+          description: Namespace vertex ID; required for all pod owner types except 'namespace' and 'unresolvedip'
+    Graph:
+      type: object
+      description: Communication topology graph
+      properties:
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        vertices:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Vertex"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/Edge"
+    TopologyResponse:
+      type: object
+      description: Owner communication topology graph
+      properties:
+        graph:
+          $ref: '#/components/schemas/Graph'
+    
+    CustomerConfig:
+       type: object
+       properties:
+         labelFilter:
+           type: array
+           description: Collection of cluster name, namespace labels, workload labels, and mode
+           items:
+             $ref: '#/components/schemas/LabelFilter'
+         clusterCIDRs:
+           type: array
+           description: Collection of cluster name to array of cidrs 
+           items:
+             $ref: '#/components/schemas/ClusterCIDRs'
+         unresolvedIPs:
+           type: array 
+           description: Collection of unresolvedIPs 
+           items:
+             $ref: '#/components/schemas/UnresolvedIPs'
+    LabelFilter:
+       type: object
+       properties:
+         clusterName:
+          type: string
+          description: Cluster name that mode, workloadKeys, and namespaceKeys belongs to
+         mode: 
+           $ref: '#/components/schemas/Mode'
+         workloadKeys:
+           type: array
+           items:
+             type: string
+             description: Array of workload label keys 
+         namespaceKeys:
+           type: array
+           items:
+             type: string
+             description: Array of namespace label keys
+    Mode: 
+      type: string
+      description: Indicates what labels should be used
+      enum: 
+        - "USE_ALL_LABELS"
+        - "INCLUDE_LABELS"
+        - "EXCLUDE_LABELS"
+    UnresolvedIPs:
+      type: object 
+      properties:
+        ipsOrCIDRs:
+          type: array
+          items:
+            type: string
+            description: Array of unresolved ips or cidrs 
+        alias: 
+          type: string
+          description: Alias name for ips 
+        allowedByDefault:
+          type: boolean
+          description: Indicates if allowed by default 
+    ClusterCIDRs:
+      type: object
+      properties:
+        clusterName:
+          type: string
+          description: Cluster name that clusterCIDRs belongs to 
+        cidrs: 
+          type: array
+          items:
+            type: string
+            description: Array of CIDRs

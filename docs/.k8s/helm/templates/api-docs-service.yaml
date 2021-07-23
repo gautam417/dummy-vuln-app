@@ -1,0 +1,21 @@
+{{- if and (contains "secure" .Values.apps) (.Values.sysdig.secure.apiDocs.enabled) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sysdigcloud-api-docs
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sysdigcloud
+    role: api-docs
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 12345
+      protocol: TCP
+  selector:
+    app: sysdigcloud
+    role: api-docs
+{{ end }}

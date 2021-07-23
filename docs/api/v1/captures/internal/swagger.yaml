@@ -1,0 +1,316 @@
+openapi: 3.0.0
+info:
+  title: Captures Internal API
+  description: Internal API for Captures
+  version: v1
+
+paths:
+  /api/v1/captures/{captureId}/summary:
+    get:
+      summary: Get the summary for a capture
+      description: Get the summary for a capture
+      parameters:
+        - name: captureId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully got the summary for a capture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummaryResponse"
+        404:
+          description: The capture could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundResponse"
+  /api/v1/captures/{captureId}/views/{view}:
+    get:
+      summary: Get the view for a capture
+      description: Get the view for a capture
+      parameters:
+        - name: captureId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: view
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: viewAs
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully got the summary for a capture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewResponse"
+        404:
+          description: The capture could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundResponse"
+  /api/v1/captures/views:
+    get:
+      summary: View captures
+      description: View captures
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully viewed the captures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetCaptureViewsResponse"
+        
+components:
+  schemas:
+    SummarySliceMetricDataTimelineSlice:
+      type: object
+      properties:
+        t:
+          type: integer
+        v:
+          type: integer
+    SummarySliceMetricData:
+      type: object
+      properties:
+        max:
+          type: integer
+        noteworthy:
+          type: boolean
+        tot:
+          type: integer
+        aggregation:
+          type: string
+        excludable:
+          type: boolean
+        timeLine:
+          type: array
+          items:
+            $ref: '#/components/schemas/SummarySliceMetricDataTimelineSlice'
+    SummarySliceMetric:
+      type: object
+      properties:
+        desc:
+          type: string
+        targetView:
+          type: string
+        category:
+          type: string
+        targetViewFilter:
+          type: string
+        name:
+          type: string
+        drillDownKey:
+          type: string
+        data:
+          $ref: '#/components/schemas/SummarySliceMetricData'
+    SummarySliceMetrics:
+      type: array
+      items:
+        $ref: '#/components/schemas/SummarySliceMetric'
+    SummarySliceCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+    SummarySliceInfo:
+      type: object
+      properties:
+        startTs:
+          type: integer
+        endTs:
+          type: integer
+        durationNs:
+          type: integer
+        IndexFormatVersion:
+          type: integer
+        containers:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            b35e2cb8e99c: "k8s_elasticsearch-exporter_elasticsearch-exporter-759dc49f97-k97zp_logging_4834505b-b41a-432e-8cbb-a6a9fcf67658_0"
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/SummarySliceCategory'
+    SummarySliceData:
+      type: object
+      properties:
+        info:
+          $ref: '#/components/schemas/SummarySliceInfo'
+        metrics:
+          $ref: '#/components/schemas/SummarySliceMetrics'
+    SummarySlice:
+      type: object
+      properties:
+        progress:
+          type: integer
+        data:
+          $ref: '#/components/schemas/SummarySliceData'
+    SummaryResponse:
+      type: object
+      properties:
+        slices:
+          type: array
+          items:
+            $ref: '#/components/schemas/SummarySlice'
+
+    DKNode:
+      type: object
+      properties:
+        d:
+          type: array
+          items:
+            type: string
+            example: "k8s_cassandra_sysdigcloud-cassandra-0_testcassandra_fc029c77-97c1-11eb-9fb3-0a0962535b38_1"
+        k:
+          type: string
+          example: "eb09630b95b6:127.0.0.1:47306->127.0.0.1:35597"
+    ViewSliceData:
+      type: array
+      items:
+        $ref: '#/components/schemas/DKNode'
+    Legend:
+      type: object
+      properties:
+        format:
+          type: string
+          example: "DEC"
+        name:
+          type: string
+          example: "L4PROTO"
+        size:
+          type: integer
+          example: 8
+        type:
+          type: string
+          example: "PORT" 
+    ViewSliceInfo:
+      type: object
+      properties:
+        appliesTo:
+          type: array
+          items:
+            type: string
+        count:
+          type: integer
+        canDrillDown:
+          type: boolean
+        filterTemplate:
+          type: string
+        filterTemplateF:
+          type: string
+        legend:
+          type: array
+          items:
+            $ref: '#/components/schemas/Legend'
+        sortingCol:
+          type: integer
+    ViewSlice:
+      type: object
+      properties:
+        progress:
+          type: integer
+        data:
+          $ref: '#/components/schemas/ViewSliceData'
+        info:
+          $ref: '#/components/schemas/ViewSliceInfo'
+    ViewResponse:
+      type: object
+      properties:
+        slices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ViewSlice'
+
+    CaptureView:
+      type: object
+      properties:
+        appliesTo:
+          type: array
+          items:
+            type: string
+            example: container.id
+        canDrillDown:
+          type: boolean
+        description:
+          type: string
+          example: "Top network connections. This view lists all of the network connections that were active during the last sampling interval, with details for each of them."
+        drilldownTarget:
+          type: string
+          example: incoming_connections
+        filter:
+          type: string
+          example: "connections"
+        isRoot:
+          type: boolean
+        name:
+          type: string
+          example: "Connections"
+        tags:
+          type: array
+          items:
+            type: string
+            example: "wsysdig"
+        tips:
+          type: array
+          items:
+            type: string
+            example: "This view can be applied not only to the whole machine, but also to single processes, containers, threads and so on. Use it after a drill down for more fine grained investigation."
+    GetCaptureViewsResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/CaptureView'
+
+    NotFoundResponse:
+      type: object
+      description: Details on why the object could not be found
+      properties:
+        timestamp:
+          type: integer
+        status:
+          type: integer
+          description: The http status
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+          description: The path used by the corresponding request

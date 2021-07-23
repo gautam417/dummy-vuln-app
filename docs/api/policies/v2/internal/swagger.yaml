@@ -1,0 +1,2396 @@
+openapi: 3.0.0
+info:
+  title: Policy API
+  description: API for Policies
+  version: v2
+
+paths:
+  /settings/falco/engineInfo:
+    get:
+      summary: Get info about the falco engine used to validate rules content
+      description: |
+        This endpoint returns the value of the "engine_info" property that is returned by running "falco --support".
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: Information about the falco engine.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoEngineInfo"
+
+  /settings/falco/defaultRulesFiles:
+    get:
+      summary: Get the default falco rules files.
+      description: |
+        Get the default falco rules files e.g. the set of falco rules managed by sysdig.
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: The default falco rules files.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultFalcoRulesFiles"
+
+    put:
+      summary: Set the default rules files e.g. the set of falco rules managed by Sysdig.
+      description: >-
+        Set the current default falco rules files e.g. set of falco
+        rules managed by sysdig. In SaaS deployments this endpoint
+        requires super-user privileges. In on-premise deployments, it
+        can be used by users that can set the custom rules files. This
+        content is always validated by passing the current default
+        rules files plus the current user rules file (see
+        /settings/falco/userRulesFile) to the open source falco
+        executable to verify that falco can read the combination of
+        files. The backend should choose the variant that has the
+        greatest required_engine_version for each file, and then run
+        open source falco with the -d option to verify the files. As
+        knowing the current value of the `version` field is required
+        to successfully update the rules file, in order to update the
+        rules content you must first do a GET and update the `content`
+        property. The `version` property in the response will be
+        incremented on success.
+      tags:
+        - Falco Rules Files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DefaultFalcoRulesFiles"
+      responses:
+        200:
+          description: The default falco rules files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultFalcoRulesFiles"
+        400:
+          description: The provided falco rules content was either not valid or a rule is being deleted that is still used by a policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoRulesError"
+        409:
+          $ref: '#/components/responses/Conflict'
+  /settings/falco/newestDefaultRulesFiles:
+    get:
+      summary: Get the newest default falco rules files.
+      description: |
+        Get the newest default falco rules files e.g. the set of falco rules managed by sysdig.
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: The newest falco rules files.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewestDefaultFalcoRulesFiles"
+  /settings/falco/customRulesFiles:
+    get:
+      summary: Get the custom falco rules files.
+      description: |
+        Get the custom falco rules files e.g. the set of falco rules managed by a customer.
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: The custom falco rules files.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFalcoRulesFiles"
+
+    put:
+      summary: Set the custom rules files e.g. the set of falco rules managed by a customer.
+      description: >-
+        Set the current custom falco rules files. This
+        content is always validated by passing the current default
+        rules files plus the submitted customer rules files and
+        any Secure UI generated rules to the open source falco executable
+        to verify that falco can read the combination of
+        files. The backend should choose the variant that has the
+        greatest required_engine_version for each file, and then run
+        open source falco with the -d option to verify the files. As
+        knowing the current value of the `version` field is required
+        to successfully update the rules file, in order to update the
+        rules content you must first do a GET and update the `content`
+        property. The `version` property in the response will be
+        incremented on success.
+      tags:
+        - Falco Rules Files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFalcoRulesFiles"
+      responses:
+        200:
+          description: The custom falco rules files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFalcoRulesFiles"
+        400:
+          description: The provided falco rules content was either not falco compliant, causes a rule to be deleted that is still used by a policy, or has non null default policies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoRulesError"
+        409:
+          $ref: '#/components/responses/Conflict'
+  /settings/falco/customRulesFiles/{filename}:
+    get:
+      summary: Get the custom falco rules file matching the filename
+      description: Get the custom falco rules file matching the filename
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: The custom falco rules file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleFalcoRulesFile"
+        404:
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update the custom falco rules file matching the filename
+      description: Update the custom falco rules file matching the filename
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimpleFalcoRulesFile"
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: The custom falco rules file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleFalcoRulesFile"
+        400:
+          description: The provided falco rules content was either not falco compliant, causes a rule to be deleted that is still used by a policy, or has non null default policies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoRulesError"
+        409:
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete the specified falco rules file
+      description: Delete the specified falco rules file
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: The deleted policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleFalcoRulesFile"
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+
+  /v2/policies:
+    post:
+      summary: Create a new security policy
+      description: Save a new security policy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyV2"
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The newly created policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyV2"
+        400:
+          description: The submitted policy was invalid
+          content:
+            text/plain:
+              schema:
+                type: string
+    get:
+      summary: Retrieve security policies
+      description: Returns information about policies configured by the current customer. Policies can be filtered by priority and scope.
+      parameters:
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            format: integer
+          example: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            format: integer
+          example: 10
+        - name: filter
+          in: query
+          description: string to look for in policy names/descriptions
+          required: false
+          schema:
+            type: string
+          example: "Write below"
+        - name: severity
+          in: query
+          description: finds policies that correspond to a numeric value representing a severity. The query param can be repeated to look for multiple severities
+          required: false
+          schema:
+            type: number
+          example: 3
+      tags:
+        - Policies
+      responses:
+        200:
+          description: An array of policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PolicyV2"
+  /v2/policies/{id}:
+    get:
+      summary: Retrieve the security policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The requested policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyV2"
+    put:
+      summary: Update the security policy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicyV2"
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The requested policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyV2"
+        400:
+          description: The updated policy was invalid
+          content:
+            text/plain:
+              schema:
+                type: string
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete the security policy.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The deleted policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyV2"
+  /v2/policies/batch:
+    post:
+      summary: Create a new security policy and rules in a transaction
+      description: Save a new security policy and rules in a transaction. If the policy or any of the rules fail validation, the operation is canceled (no policy or rule is created) and an error response is returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - policy
+                - rules
+              properties:
+                policy:
+                  $ref: "#/components/schemas/PolicyV2"
+                rules:
+                  type: array
+                  description: Array of rules to create. If no rules need to be created, this will be an empty array
+                  items:
+                    $ref: "#/components/schemas/RuntimePolicyRule"
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The newly created policy and rules
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - policy
+                  - rules
+                properties:
+                  policy:
+                    $ref: "#/components/schemas/PolicyV2"
+                  rules:
+                    type: array
+                    description: Array of newly created rules. If no rules were created, this will be an empty array
+                    items:
+                      $ref: "#/components/schemas/RuntimePolicyRule"
+        400:
+          description: A submitted policy or rule was invalid
+          content:
+            text/plain:
+              schema:
+                type: string
+  /v2/policies/default:
+    post:
+      summary: Create default policies for the current customer.
+      description: Create new policies based on the currently available set of rules. For now, this only covers Falco rules, but we might extend the endpoint later. The backend should use the defaultPolicies property of a previously provided FalcoRulesFiles model as guidance on the set of policies to create. The backend should only create new policies (not delete or modify), and should only create new policies if there is not an existing policy with the same name.
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The created default policies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PolicyV2"
+    get:
+      summary: View what default policies would be created for the current customer.
+      description: Identical to post, but does not actually create any policies. Instead, returns what policies would be created if a post were made.
+      tags:
+        - Policies
+      responses:
+        200:
+          description: The default policies that would be created with a post verb.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PolicyV2"
+
+  /secure/rules:
+    post:
+      summary: Create a new rule
+      description: |
+        Save a new rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimePolicyRule"
+      tags:
+        - Rules
+      responses:
+        200:
+          description: The saved rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimePolicyRule"
+        400:
+          description: The provided rule is not valid
+          content:
+            text/plain:
+              schema:
+                type: string
+  /secure/rules/{ruleId}:
+    get:
+      summary: Retrieve info about a single rule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Rules
+      responses:
+        200:
+          description: The rule with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimePolicyRule"
+    put:
+      summary: Update info associated with a rule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimePolicyRule"
+      tags:
+        - Rules
+      responses:
+        200:
+          description: The rule with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimePolicyRule"
+        400:
+          description: The provided rule is not valid
+          content:
+            text/plain:
+              schema:
+                type: string
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete a rule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Rules
+      responses:
+        200:
+          description: The rule that was deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimePolicyRule"
+  /secure/rules/summaries:
+    get:
+      summary: Retrieve a list of summary rule information, grouped by rule name.
+      description: |
+        Returns the list of rules in the system. These are grouped by name and do not necessarily represent individual rule objects, as multiple rules can have the same name.
+      tags:
+        - Rules
+      parameters:
+        - name: policyType
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PolicyType"
+      responses:
+        200:
+          description: An array of rules grouped by name.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LightRuntimePolicyRule"
+  /secure/rules/groups:
+    get:
+      summary: Retrieve a group of all rules having a given name.
+      description: Retrieve a group of all rules having the given name. This is used to show how a base rule is modified by later rules that override/append to the rule.
+      tags:
+        - Rules
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: An array of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RuntimePolicyRule"
+  /secure/rules/policyMappings:
+    get:
+      summary: Retrieve a map of rule names to their corresponding policies that use them
+      description: Retrieve a map of rule names to their corresponding policies that use them. The accept header will include "lite" to indicate the lightweight response of the endpoint should be returned e.g. 'application/xhtml+xml; lite' and return the full representation if not requested
+      tags:
+        - Policies
+      responses:
+        200:
+          description: An array of policies
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LightRulenameToPoliciesMappings'
+                  - $ref: '#/components/schemas/RulenameToPoliciesMappings'
+  /secure/rules/tags:
+    get:
+      summary: Retrieves every tag associated with a runtime concept (for now just rules). Tags will be included irrespective of whether or not that rule is used by a policy
+      description: Retrieves every tag associated with a runtime rule irrespective of whether or not that rule is used by a policy
+      tags:
+        - Rules
+      responses:
+        200:
+          description: The array representing all the tags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagResponseWrapper"    
+  /secure/falco/macros:
+    post:
+      summary: Create a new macro
+      description: |
+        Save a new macro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FalcoMacro"
+      tags:
+        - Falco Macros
+      responses:
+        200:
+          description: The saved FalcoMacro
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoMacro"
+        400:
+          description: The provided FalcoMacro was invalid
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /secure/falco/macros/{macroId}:
+    get:
+      summary: Retrieve info about a single macro
+      parameters:
+        - name: macroId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Falco Macros
+      responses:
+        200:
+          description: The macro with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoMacro"
+    put:
+      summary: Update info associated with a macro
+      parameters:
+        - name: macroId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FalcoMacro"
+      tags:
+        - Falco Macros
+      responses:
+        200:
+          description: The macro with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoMacro"
+        400:
+          description: The updated macro is not valid
+          content:
+            text/plain:
+              schema:
+                type: string
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete a macro
+      parameters:
+        - name: macroId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Falco Macros
+      responses:
+        200:
+          description: The macro that was just deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoMacro"
+  /secure/falco/macros/summaries:
+    get:
+      summary: Retrieve a list of summary macro information, grouped by macro name.
+      description: |
+        Returns the list of macros in the system. These are grouped by name and do not necessarily represent individual macro objects, as multiple macros can have the same name.
+      tags:
+        - Falco Macros
+      responses:
+        200:
+          description: An array of macros grouped by name.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LightFalcoMacro"
+  /secure/falco/macros/groups:
+    get:
+      summary: Retrieve a group of all falco macros having a given name.
+      description: Retrieve a group of all falco macros having the given name. This is used to show how a base macro is modified by later macros that override/append to the macro.
+      tags:
+        - Falco Macros
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: An array of macros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FalcoMacro"
+  /secure/falco/lists:
+    post:
+      summary: Create a new falco list
+      description: |
+        Save a new falcolist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FalcoList"
+      tags:
+        - Falco Lists
+      responses:
+        200:
+          description: The saved falco list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoList"
+        400:
+          description: The provided falco list is not valid
+          content:
+            text/plain:
+              schema:
+                type: string
+  /secure/falco/lists/{falcolistId}:
+    get:
+      summary: Retrieve info about a single falco list
+      parameters:
+        - name: falcolistId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Falco Lists
+      responses:
+        200:
+          description: The falco list with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoList"
+    put:
+      summary: Update info associated with a falcolist
+      parameters:
+        - name: falcolistId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FalcoList"
+      tags:
+        - Falco Lists
+      responses:
+        200:
+          description: The falco list with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoList"
+        400:
+          description: The provided falcolist is not valid
+          content:
+            text/plain:
+              schema:
+                type: string
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete a falco list
+      parameters:
+        - name: falcolistId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Falco Lists
+      responses:
+        200:
+          description: The falco list that was just deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoList"
+  /secure/falco/lists/summaries:
+    get:
+      summary: Retrieve a list of summary falco list information, grouped by list name.
+      description: |
+        Returns the list of falco lists in the system. These are grouped by name and do not necessarily represent individual falco list objects, as multiple falco lists can have the same name.
+      tags:
+        - Falco Lists
+      responses:
+        200:
+          description: An array of falco lists grouped by name.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LightFalcoList"
+  /secure/falco/lists/groups:
+    get:
+      summary: Retrieve a group of falco lists having a given name.
+      description: Retrieve a group of all falco lists having the given name. This is used to show how a base list is modified by later lists that override/append to the list.
+      tags:
+        - Falco Lists
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: An array of lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FalcoList"
+  
+
+  /settings/falco/filters:
+    get:
+      summary: View the available falco filters for a customer
+      description: Returns what falco filters are available to customer to configure falco rules
+      tags:
+        - Falco Metadata
+      parameters:
+        - name: eventSource
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/FalcoSource"
+          description: when provided only falco filters corresponding to the specified event source will be included in the response
+      responses:
+        200:
+          description: The falco filters available to customer to configure falco rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FalcoFilter"
+
+  /v2/policyDescriptors:
+    get:
+      summary: Retrieve the list of available MetricDescriptor objects for a provided policy type
+      description: Retrieve the list of available MetricDescriptor objects for a provided policy type
+      tags:
+        - Policy Descriptors
+      parameters:
+        - name: policyType
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/PolicyType"
+      responses:
+        200:
+          description: The array representing the available metric descriptors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetricDescriptorResponseWrapper"
+  /v2/policyActions:
+    get:
+      summary: Retrieve the list of supported policy actions for a provided policy type
+      description: Retrieve the list of supported policy actions for a provided policy type
+      tags:
+        - Policy Descriptors
+      parameters:
+        - name: policyType
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/PolicyType"
+      responses:
+        200:
+          description: The array representing the policy actions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyActionResponseWrapper"
+
+
+
+  /secure/profileGroups:
+    get:
+      summary: Retrieve list of all profile groups (no profileIndices)
+      tags:
+        - Profiles
+      responses:
+        200:
+          description: List of all profile groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfileGroup"
+    post:
+      summary: Create default profile grouping
+      description: For now it will just create the "by_container_image" grouping
+      tags:
+        - Profiles
+      responses:
+        200:
+          description: New created groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfileGroup"
+  /secure/profileGroups/{profileGroupId}:
+    get:
+      summary: Get the profile group with the given id (with profileIndices)
+      parameters:
+        - name: profileGroupId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Profiles
+      responses:
+        200:
+          description: Profile group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileGroup"
+  /secure/profileGroups/{profileGroupId}/profiles:
+    get:
+      summary: Get basic info about profiles for a given ProfileGroup
+      parameters:
+        - name: profileGroupId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filter
+          in: query
+          description: >-
+            If specified, filter to only include profiles where the profile name or image name
+            (registry/repository:tag@hash) contains this string. Defaults to empty string
+          required: false
+          schema:
+            type: string
+        - name: sortMethod
+          in: query
+          description: Sorting method. Defaults to `desc`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to sort. Defaults to `score`. Profiles with `status:'FINALIZED'` will always
+            appear above `status:'LEARNING'`, for all values of `sortBy` except
+            `sortBy:'status', sortMethod:'asc'`.
+          required: false
+          schema:
+            type: string
+            enum:
+              - score
+              - profileName
+              - status
+              - createdOn
+        - name: status
+          in: query
+          description: >-
+            A comma-separated list of statuses. If specified, only profiles with these statuses will
+            be retrieved. Defaults to `['FINALIZED','LEARNING']`
+          required: false
+          schema:
+            type: string
+            enum:
+              - FINALIZED
+              - LEARNING
+        - name: scoreMin
+          in: query
+          description: >-
+            If specified, only profiles with a confidence score at least this amount will be
+            retrieved. Defaults to `0`
+          required: false
+          schema:
+            type: integer
+        - name: scopeFilter
+          in: query
+          description: >-
+            If specified, this is a scope filter string (e.g. `container.image = nginx`). Defaults
+            to Everywhere
+          required: false
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the profiles list. Only entries >= `offset` will be
+            retrieved. Defaults to `0`. If any filters are also specified, this index will be
+            applied on the filtered list. An empty list will be retrieved if this index overflows
+            the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If any filters are also
+            specified, the limit will be applied on the filtered list. `limit` must be >= `1` and if
+            it overflows the list all entries will be retrieved. Defaults to length of list
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Profiles
+      responses:
+        "200":
+          description: The retrieved profiles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profiles"
+  /secure/profileGroups/{profileGroupId}/profiles/{profileName}:
+    get:
+      summary: Get detailed info about a profile (specified by name) in the specified group
+      parameters:
+        - name: profileGroupId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: profileName
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Profiles
+      responses:
+        200:
+          description: Detailed info about a Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /secure/profiles/{profileId}:
+    get:
+      summary: Get detailed info about a profile by its UUID
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Profiles
+      responses:
+        200:
+          description: Detailed info about a Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /secure/profiles/{profileId}/actions/reset:
+    post:
+      summary: Reset a profile by its UUID
+      tags:
+        - Profiles
+      description: |
+        Schedule a profile for reset, this will defer the erasure of a previously profile collected state and automatically trigger the profile recomputation with incoming fingerprint data stream.
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {}
+      responses:
+        200:
+          description: |
+            Detailed info about the reset action has been scheduled on the Profile. The actual deletion will happen asynchronously.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileActionResetResponse"
+  /v1/secure/policyTuner/enable:
+    post:
+      summary: The policy tuner service records this customer as enabled such that a tune will be run for this customer during the next run cycle
+      description: The policy tuner service records this customer as enabled such that a tune will be run for this customer during the next run cycle
+      tags:
+        - Tuner
+      responses:
+        200:
+          description: Success
+        400:
+          description: Sysdig has not enabled tuning for this customer
+          content:
+            text/plain:
+              schema:
+                type: string
+  /v1/secure/policyTuner/tuneNow:
+    post:
+      summary: The policy tuner immediately runs tuning for the customer
+      description: The policy tuner immediately runs tuning for the customer
+      tags:
+        - Tuner
+      responses:
+        200:
+          description: The generated tuner FalcoRulesFile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoRulesFile"
+        400:
+          description: Sysdig has not enabled tuning for this customer
+          content:
+            text/plain:
+              schema:
+                type: string
+  /v1/secure/policyTuner/disable:
+    post:
+      summary: The policy tuner service records this customer as disabled such that a tune will not be run for this customer during the next run cycle
+      description: The policy tuner service records this customer as disabled such that a tune will not be run for this customer during the next run cycle
+      tags:
+        - Tuner
+      responses:
+        200:
+          description: Success
+  /v1/secure/policyTuner/tuningEnabled:
+    get:
+      summary: Checks if tuning is enabled 
+      description: Checks if tuning is enabled
+      tags:
+        - Tuner 
+      responses:
+        200:
+          description: Indicates whether tuning is enabled or disabled 
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - enabledStatus 
+                properties:
+                  enabledStatus:
+                    type: boolean
+                    description: returns True if tuning is enabled, False if tuning is disabled 
+                    example: true
+  /v1/secure/policyTuner/status:
+    get:
+      summary: Ping the status
+      description: |
+        Retrieves a 200 to double check if the policy tuner feature on the
+        backend is available.
+      tags:
+        - Tuner
+      responses:
+        200:
+          description: Indicates the policy tuner feature is available
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: The status.
+                    enum:
+                      - ok
+                    example: ok
+  /v1/secure/policyTuner/excludeEvents:
+    post:
+      summary: Returns a list of exceptions to exclude the events matching a set of parameters
+      description: Returns a list of exceptions to exclude the events matching a set of parameters
+      tags:
+        - Tuner
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: The timestamp in nanoseconds in which the events to be excluded begin
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: The timestamp in nanoseconds in which the events to be excluded end
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: The number of suggested exclusion proposals to return in the responses. The request will be rejected if it is greater than 10 or less than 1.
+      responses:
+        200:
+          description: Indicates the service was able to successfully find a list of exceptions to exclude the provided events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExclusionProposals"
+        400:
+          description: Returned if the start param occurs after the end or if the parameters are of the wrong data type or the limit is out of range
+          content:
+            text/plain:
+              schema:
+                type: string
+  /v1/secure/policyTuner/exceptions:
+    post:
+      summary: Adds a provided set of exceptions to the tuner file
+      description: Adds a provided set of exceptions to the tuner file
+      tags:
+        - Tuner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExclusionProposals"
+      responses:
+        200:
+          description: Indicates the new exceptions were successfully added to the tuner file
+        400:
+          description: Indicates one of the fields in the request body was missing, the wrong data type, or the exception values did not match the expected form of the exception
+          content:
+            text/plain:
+              schema:
+                type: string
+components:
+  responses:
+    NotFound:
+      description: Resource with the specified ID could not be found. More information about 404 can be found at https://httpstatuses.com/404
+    Conflict:
+      description: The user must first perform a GET request to get the current version of the resource. The user must then compare
+        the remote version with the local expected version and merge any updates from remote if needed and then update the local version
+        to match the remote version. More information about 409 can be found at https://httpstatuses.com/409
+  schemas:
+    FalcoRulesVariant:
+      type: object
+      required: ["requiredEngineVersion", "content"]
+      properties:
+        required_engine_version:
+          type: number
+          format: integer
+          description: The minimum falco engine version that can read this rules file variant.
+        content:
+          type: string
+          description: A string containing the yaml contents of a falco rules file variant.
+          example: "- macro: open_write\n  condition: something"
+    FalcoRulesFile:
+      type: object
+      required: ["name", "variants"]
+      properties:
+        name:
+          type: string
+          description: A name for this file. Should be used in UI to distinguish between files.
+          example: "falco_rules.yaml"
+        variants:
+          type: array
+          description: An array of alternate versions for the given file. An agent should choose the highest version that is compatible with its included falco engine.
+          items:
+            $ref: "#/components/schemas/FalcoRulesVariant"
+    SimpleFalcoRulesFile:
+      type: object
+      required: ["filename", "content"]
+      properties:
+        filename:
+          type: string
+          description: A name for this file. Should be used in UI to distinguish between files.
+          example: "falco_rules.yaml"
+        content:
+          type: string
+          description: A string containing the yaml contents of a falco rules file variant.
+          example: "- macro: open_write\n  condition: something"
+        version:
+          type: integer
+          description: Version of the corresponding CustomRulesFiles object to which the specific file belongs
+    NewestFalcoRulesFile:
+      type: object
+      required: ["name", "requiredEngineVersion", "content"]
+      properties:
+        name:
+          type: string
+          description: A name for this file. Should be used in UI to distinguish between files.
+          example: "falco_rules.yaml"
+        required_engine_version:
+          type: number
+          format: integer
+          description: The minimum falco engine version that can read this rules file variant.
+        content:
+          type: string
+          description: A string containing the yaml contents of a falco rules file variant.
+          example: "- macro: open_write\n  condition: something"
+    FalcoRulesFiles:
+      type: object
+      required: ["version", "tag", "files"]
+      properties:
+        version:
+          type: integer
+          description: Version of the object. Incremented on each update and used for optimistic locking
+        tag:
+          type: string
+          description: An externally provided version identifier (e.g. git tag) that can be used to uniquely identify this set of files.
+          example: "v0.1.2"
+        files:
+          type: array
+          description: A list of files that comprise the set of rules files
+          items:
+            $ref: "#/components/schemas/FalcoRulesFile"
+        defaultPolicies:
+          type: array
+          description: A list of reference policies that can be created from the provided falco rules. Used by the /v2/policies/default endpoint.
+          items:
+            $ref: "#/components/schemas/PolicyV2Info"
+    NewestFalcoRulesFiles:
+      type: object
+      required: ["version", "tag", "files"]
+      properties:
+        version:
+          type: integer
+          description: Version of the object. Incremented on each update and used for optimistic locking
+        tag:
+          type: string
+          description: An externally provided version identifier (e.g. git tag) that can be used to uniquely identify this set of files.
+          example: "v0.1.2"
+        files:
+          type: array
+          description: A list of files that comprise the set of rules files
+          items:
+            $ref: "#/components/schemas/NewestFalcoRulesFile"
+    CustomFalcoRulesFiles:
+      type: object
+      properties:
+        customFalcoRulesFiles:
+          allOf:
+            - $ref: "#/components/schemas/FalcoRulesFiles"
+    NewestDefaultFalcoRulesFiles:
+      type: object
+      properties:
+        newestDefaultFalcoRulesFiles:
+          allOf:
+            - $ref: "#/components/schemas/NewestFalcoRulesFiles"
+    DefaultFalcoRulesFiles:
+      type: object
+      properties:
+        defaultFalcoRulesFiles:
+          allOf:
+            - $ref: "#/components/schemas/FalcoRulesFiles"
+    FalcoEngineInfo:
+      type: object
+      required: ["engineInfo"]
+      properties:
+        engineInfo:
+          type: object
+          required: ["engineVersion"]
+          properties:
+            engineVersion:
+              type: integer
+              example: 8
+              description: The current falco engine version.
+    FalcoRulesError:
+      type: object
+      description: Details on why a falco rules file could not be saved.
+      properties:
+        errors:
+          type: array
+          description: a list of errors
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                description: a longer human-readable description of the error
+                example: 'Error loading rules: [string "-- Copyright (C) 2016-2018 Draios Inc dba Sys..."]:357: Unknown rule object: {condition="(e"...'
+              reason:
+                description: >
+                  A short string identifying the error. Reasons may include:
+                    * `Invalid YAML syntax`: invalid yaml (this is already used in many places, so no "ID")
+                    * `FALCO_RULES_INVALID`: valid yaml, but invalid falco rules file
+                    * `FALCO_RULES_ERROR`: some errors on the backend side while trying to validate the rules.
+                  This list may not be complete.
+                type: string
+                enum:
+                  [
+                    "Invalid YAML syntax",
+                    FALCO_RULES_INVALID,
+                    FALCO_RULES_ERROR,
+                  ]
+
+    PolicyType:
+      type: string
+      description: "A name for a non overlapping subset of policies that share common characteristics. The enums falco and list_matching correspond to the FalcoSource enum syscall, k8s_audit corresponds to k8s_audit, and the others will map to a future enum value once OSS Falco decides a name"
+      enum:
+        - falco
+        - list_matching
+        - k8s_audit
+        - aws_cloudtrail
+        - gcp_auditlog
+    FalcoSource:
+      type: string
+      description: "An event source through which Falco rules are evaluated. The enum syscall corresponds to the policy types falco and list_matching. The enum k8s_audit corresponds to the policy type k8s_audit"
+      enum:
+        - syscall
+        - k8s_audit
+        - aws_cloudtrail
+        - gcp_auditlog
+    PolicyAction:
+      type: object
+      description: Functional behavior that can be enabled within a policy and should be performed if the condition of a policy is met. Certain actions may only make sense for policies of a particular type.
+      oneOf:
+        - $ref: '#/components/schemas/CapturePolicyAction'
+        - $ref: '#/components/schemas/StopContainerPolicyAction'
+        - $ref: '#/components/schemas/PauseContainerPolicyAction'
+        - $ref: '#/components/schemas/KillContainerPolicyAction'
+    PolicyV2Info:
+      type: object
+      properties:
+        name:
+          type: string
+          description: A short name for the policy
+          example: "Check filesystem activity"
+        description:
+          type: string
+          description: Description of policy
+          example: "Monitor all filesystem operations and look for suspicious or notable behavior"
+        severity:
+          type: integer
+          description: How severe is this policy when violated. Range from 0 to 7 included.
+          items:
+            type: string
+          example: 4
+        enabled:
+          type: boolean
+          description: True if the policy should be considered
+          example: true
+        scope:
+          type: string
+          description: Where the policy is being applied- Container, Host etc..
+          example: "container.image.repository = sysdig/agent"
+        ruleNames:
+          type: array
+          description: Array of rule names. (They must be names instead of ids, as the rules list view is by name, to account for multiple rules having the same name).
+          items:
+            type: string
+          example:
+            [
+              "Write below binary dir",
+              "Write below root",
+              "Write below monitored dir",
+            ]
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyAction"
+        type:
+          $ref: "#/components/schemas/PolicyType"
+    PolicyV2:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/PolicyV2Info"
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: Unique identifier representing a specific policy.
+              example: 1
+            version:
+              type: integer
+              description: Version of the object. Incremented on each update and used for optimistic locking
+              example: 18
+            createdOn:
+              type: integer
+              description: A timestamp (in milliseconds) of when the rules object was first created.
+              example: 1553702727177
+            modifiedOn:
+              type: integer
+              description: A timestamp (in milliseconds) of when the rules object was last modified.
+              example: 1553702738288
+            origin:
+              $ref: "#/components/schemas/RuntimePolicyObjectOrigin"
+            versionId:
+              $ref: "#/components/schemas/RuntimePolicyObjectVersionId"
+            notificationChannelIds:
+              type: array
+              items:
+                type: integer
+                example: [3, 5]
+            profile:
+              $ref: "#/components/schemas/ProfileModelMeta"
+    LightPolicyV2:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier representing a specific policy.
+          example: 1
+        name:
+          type: string
+          description: A short name for the policy
+          example: "Check filesystem activity"
+        enabled:
+          type: boolean
+          description: True if the policy should be considered
+          example: true
+    StopContainerPolicyAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_STOP]
+        msg:
+          type: string
+          description: a message to send to the thing being stopped
+    CapturePolicyAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_CAPTURE]
+        filter:
+          type: string
+          description: specifies the subset to match
+          example: proc.name=cat or proc.name=vi
+        isLimitedToContainer:
+          type: boolean
+        beforeEventNs:
+          type: integer
+          description: period of time to capture before event in nanoseconds
+        afterEventNs:
+          type: integer
+          description: period of time to capture after event in nanoseconds
+        name:
+          type: string
+          description: the name of the file in which the capture will be saved
+        storageType:
+          type: string
+          description: specifies which strategy will be taken to store the capture
+          enum: [LOCAL, S3, AGENT, PROVIDED, CASSANDRA]
+        bucketName:
+          type: string
+          description: identifies an s3 compliant bucket
+        folder:
+          type: string
+          description: the name of an s3 folder (enables the user to specify a bucket that is not in the default bucket root folder '/')
+        storageId:
+          type: integer
+          description: specifies the id of a row in the file_storage table that corresponds to a FileStorageDetails.java object
+    PauseContainerPolicyAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_PAUSE]
+        msg:
+          type: string
+          description: a message to send to the thing being paused
+    KillContainerPolicyAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_KILL]
+        msg:
+          type: string
+          description: a message to send to the thing being killed
+    PolicyActionResult:
+      type: object
+      description: Result of a policy action
+    RuntimePolicyObjectOrigin:
+      type: string
+      description: A string naming the entity that created this rule. This, combined with the version identifier, corresponds to the "Published by" field in the UI. The origin should be "Secure UI" for objects created by the Secure UI, "Sysdig" for objects provided by Sysdig, and "Customer" for objects provided programmatically by the customer.
+      enum: ["Secure UI", "Sysdig", "Customer", "Profiling", "K8s Policy Advisor"]
+      example: "Secure UI"
+    RuntimePolicyObjectVersionId:
+      type: string
+      description: A string representing the version of the file that contained this rule. This, combined with the origin, corresponds to the "Published by" field in the UI. For rules with origin == Sysdig/Customer, the version identifier should come from the version property of the FalcoRulesFiles object that originally contained the rule. For rules with origin == Secure UI, the version should be a constant string "current".
+      example: "v1.2.3"
+    RuntimePolicyObjectPublishedBy:
+      type: object
+      required: [origin, versionId]
+      properties:
+        origin:
+          $ref: "#/components/schemas/RuntimePolicyObjectOrigin"
+        versionId:
+          $ref: "#/components/schemas/RuntimePolicyObjectVersionId"
+    RuntimePolicyRuleType:
+      type: object
+      required:
+        - ruleType
+      properties:
+        ruleType:
+          type: string
+          description: Indicates the rule type
+          enum:
+            - PROCESS
+            - CONTAINER
+            - FILESYSTEM
+            - NETWORK
+            - SYSCALL
+            - FALCO
+          example: "FALCO"
+    LightRuntimePolicyRulesObject:
+      type: object
+      required:
+        - ids
+        - name
+        - publishedBys
+        - modifiedOn
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          description: The specific object ids having this name
+          example: [6, 17, 21]
+        name:
+          type: string
+          description: A name for this object. For Falco rules/macros/lists, should exactly be the value of the "rule"/"macro"/"list" property of the yaml object.
+          example: "Write Below Binary Dir"
+        publishedBys:
+          type: array
+          items:
+            type: object
+            allOf:
+              - $ref: "#/components/schemas/RuntimePolicyObjectPublishedBy"
+          description: A set of (origin,versionId) pairs for all the objects sharing this name.
+        modifiedOn:
+          type: number
+          format: integer
+          description: A timestamp (in milliseconds) of when the rules object was last modified.
+          example: 1553702738288
+    RuntimePolicyRulesObject:
+      type: object
+      required:
+        - id
+        - name
+        - origin
+        - versionId
+        - filename
+        - version
+        - modifiedOn
+        - createdOn
+      properties:
+        id:
+          type: integer
+          description: A unique identifier representing a specific rule
+          example: 1
+        name:
+          type: string
+          description: A name for this object. For Falco rules/macros/lists, should exactly be the value of the "rule"/"macro"/"list" property of the yaml object.
+          example: "Write Below Binary Dir"
+        origin:
+          $ref: "#/components/schemas/RuntimePolicyObjectOrigin"
+        versionId:
+          $ref: "#/components/schemas/RuntimePolicyObjectVersionId"
+        filename:
+          type: string
+          description: Name of the file in which the rule is defined. For Default Falco rules, this should come from the name property of the FalcoRulesFile object that contained this rule. For other falco rules, the filename should be "falco_rules.local.yaml". For non-falco rules, the filename should be "fast_rules.local.yaml".
+          example: "falco_rules.local.yaml"
+        version:
+          type: number
+          format: integer
+          description: The version is incremented when the update is successful.
+          example: 5
+        createdOn:
+          type: number
+          format: integer
+          description: A timestamp (in milliseconds) of when the rules object was first created.
+          example: 1553702727177
+        modifiedOn:
+          type: number
+          format: integer
+          description: A timestamp (in milliseconds) of when the rules object was last modified.
+          example: 1553702738288
+    TaggedPolicyObject:
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          type: array
+          description: The set of tags
+          items:
+            type: string
+          example: ["Kubernetes", "CIS Compliance", "File Integrity"]
+    LightRuntimePolicyRule:
+      allOf:
+        - $ref: "#/components/schemas/LightRuntimePolicyRulesObject"
+        - $ref: "#/components/schemas/RuntimePolicyRuleType"
+        - $ref: "#/components/schemas/UsedFalcoObject"
+        - $ref: "#/components/schemas/TaggedPolicyObject"
+    RuntimePolicyRule:
+      allOf:
+        - $ref: "#/components/schemas/RuntimePolicyRulesObject"
+        - $ref: "#/components/schemas/TaggedPolicyObject"
+        - type: object
+          required:
+            - description
+            - details
+          properties:
+            description:
+              type: string
+              description: A description of this rule. No newlines/formatting.
+              example: "an attempt to write to any file below a set of binary directories"
+            details:
+              type: object
+              oneOf:
+                - $ref: "#/components/schemas/FalcoRuleDetails"
+                - $ref: "#/components/schemas/ProcessRuleDetails"
+                - $ref: "#/components/schemas/FileSystemRuleDetails"
+                - $ref: "#/components/schemas/SyscallRuleDetails"
+                - $ref: "#/components/schemas/ContainerImagesRuleDetails"
+                - $ref: "#/components/schemas/NetworkRuleDetails"
+    AppendableFalcoObject:
+      type: object
+      properties:
+        append:
+          type: string
+          enum: [true, false]
+          description: If true, this object should be appended to an object with the same name that has already been loaded. Defaults to false if not present.
+          example: "true"
+    BaseFalcoObject:
+      allOf:
+        - $ref: "#/components/schemas/RuntimePolicyRulesObject"
+        - $ref: "#/components/schemas/AppendableFalcoObject"
+    UsedFalcoObject:
+      type: object
+      required:
+        - usedCount
+      properties:
+        usedCount:
+          type: integer
+          description: The number of rules that refer to this object (macro/list) OR the number of policies that refer to this rule
+    LightFalcoMacro:
+      allOf:
+        - $ref: "#/components/schemas/LightRuntimePolicyRulesObject"
+        - $ref: "#/components/schemas/UsedFalcoObject"
+    FalcoMacro:
+      allOf:
+        - $ref: "#/components/schemas/BaseFalcoObject"
+        - $ref: "#/components/schemas/FalcoCondition"
+    LightFalcoList:
+      allOf:
+        - $ref: "#/components/schemas/LightRuntimePolicyRulesObject"
+        - $ref: "#/components/schemas/UsedFalcoObject"
+    FalcoList:
+      allOf:
+        - $ref: "#/components/schemas/BaseFalcoObject"
+        - $ref: "#/components/schemas/FalcoItems"
+    FalcoRuleDetails:
+      allOf:
+        - $ref: "#/components/schemas/AppendableFalcoObject"
+        - $ref: "#/components/schemas/RuntimePolicyRuleType"
+        - $ref: "#/components/schemas/FalcoCondition"
+        - type: object
+          required:
+            - output
+            - priority
+          properties:
+            output:
+              type: string
+              description: A string describing the output string to generate when this rule matches an event. Should exactly match the output property of the rule\'s output field
+              example: "File below a known binary directory opened for writing (user=%user.name command=%proc.cmdline file=%fd.name)"
+            priority:
+              type: string
+              description: A string describing the falco rule\'s priority. This is only included so the resulting rule can be converted back to yaml easily. For the purposes of policy events, the policy\'s severity should be used instead of this value.
+              enum:
+                - emergency
+                - alert
+                - critical
+                - error
+                - warning
+                - notice
+                - informational
+                - debug
+              example: "error"
+            source:
+              $ref: "#/components/schemas/FalcoSource"
+    RuntimePolicyRuleList:
+      type: object
+      description: Represents a list of items and whether the list represents a set of items to match or not match
+      required:
+        - items
+        - matchItems
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+            description: the set of paths/syscalls/ports/etc.
+            example: ["/bin", "usr/bin"]
+        matchItems:
+          type: boolean
+          description: If true, the rule matches if the path/syscall/port matches one of the items in the list. If false, the rule matches if the path/syscall/port/etc does not match any of the items in the list.
+          example: true
+    ProcessRuleDetails:
+      type: object
+      required:
+        - processes
+        - ruleType
+      properties:
+        processes:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+
+    FileSystemRuleDetails:
+      type: object
+      required:
+        - readWritePaths
+        - readPaths
+        - ruleType
+      properties:
+        readWritePaths:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        readPaths:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    SyscallRuleDetails:
+      type: object
+      required:
+        - syscalls
+        - ruleType
+      properties:
+        syscalls:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    ContainerImagesRuleDetails:
+      type: object
+      required:
+        - containers
+        - ruleType
+      properties:
+        containers:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    NetworkRuleDetails:
+      type: object
+      required:
+        - tcpListenPorts
+        - udpListenPorts
+        - allOutbound
+        - allInbound
+        - ruleType
+      properties:
+        allOutbound:
+          type: boolean
+          description: If true, then all outbound connection attempts match this rule
+          example: true
+        allInbound:
+          type: boolean
+          description: If true, then all inbound connection attempts match this rule
+          example: true
+        tcpListenPorts:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        udpListenPorts:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    FalcoCondition:
+      type: object
+      required:
+        - condition
+      properties:
+        condition:
+          type: object
+          required:
+            - condition
+            - components
+          properties:
+            condition:
+              type: string
+              description: the full condition text exactly as represented in the yaml file
+              example: "evt.type in (open, openat) and bin_dir and fd.name in (monitored_directories)"
+            components:
+              type: array
+              description: an array containing the broken-up components of this falco rule\'s condition field
+              items:
+                type: object
+                oneOf:
+                  - $ref: "#/components/schemas/FalcoConditionText"
+                  - $ref: "#/components/schemas/FalcoMacroReference"
+                  - $ref: "#/components/schemas/FalcoListReference"
+    FalcoItems:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: object
+          required:
+            - items
+            - components
+          properties:
+            items:
+              type: array
+              description: the array of items as represented in the yaml List
+              example:
+                [
+                  bash,
+                  '"sh -c node -e \"require(''nan'')\""',
+                  monitored_directories,
+                ]
+              items:
+                type: string
+                description: the item text or list name
+                example: monitored_directories
+            components:
+              type: array
+              description: an array containing the broken-up components of this falco list\'s items field
+              items:
+                type: object
+                oneOf:
+                  - $ref: "#/components/schemas/FalcoListText"
+                  - $ref: "#/components/schemas/FalcoListReference"
+    FalcoConditionText:
+      type: object
+      required:
+        - conditionText
+      properties:
+        text:
+          type: string
+          description: An opaque hunk of condition text. May contain a mix of fields, relational operators, etc. Basically anything between Macro/List references.
+          example: "evt.type in (open, openat) and "
+    FalcoListText:
+      type: object
+      required:
+        - listText
+      properties:
+        text:
+          type: string
+          description: Any sort of text that might make sense to put in a list
+          example: "item 1"
+    FalcoMacroReference:
+      type: object
+      required:
+        - falcoMacroReference
+      properties:
+        falcoMacroReference:
+          type: string
+          description: The name of a FalcoMacro object. (Intentionally using names instead of ids so it can be passed directly from falco without falco having its own notion of rule/macro/list ids).
+          example: "bin_dir"
+    FalcoListReference:
+      type: object
+      required:
+        - falcoListReference
+      properties:
+        falcoListReference:
+          type: string
+          description: The name of a FalcoList object. (Intentionally using names instead of ids so it can be passed directly from falco without falco having its own notion of rule/macro/list ids).
+          example: "monitored_directories"
+
+    FalcoFilter:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Indicates what the falco filter is called
+          example: "container.healthcheck"
+        description:
+          type: string
+          description: Provides additional context about the filter such as when it evaluates to true or false and the range of potential evaluation values
+          example: "The container's health check. Will be the null value if no healthcheck configured, NONE if configured but explicitly not created, and the healthcheck command line otherwise"
+
+    RulenameToPoliciesMappings:
+      type: array
+      items:
+        $ref: "#/components/schemas/RulenameToPoliciesMapping"
+    RulenameToPoliciesMapping:
+      type: object
+      properties:
+        rule:
+          type: string
+          description: the name of a runtime policy rule
+          example: "shell_in_container"
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyV2"
+    LightRulenameToPoliciesMappings:
+      type: array
+      items:
+        $ref: "#/components/schemas/LightRulenameToPoliciesMapping"
+    LightRulenameToPoliciesMapping:
+      type: object
+      properties:
+        rule:
+          type: string
+          description: the name of a runtime policy rule
+          example: "shell_in_container"
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/LightPolicyV2"
+
+
+    PolicyActionResponseWrapper:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyAction"
+    TagResponseWrapper:
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+    MetricDescriptorResponseWrapper:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: the entire quantity of results
+        offset:
+          type: integer
+          description: the location of the returned subset of results relative to the entire list of results
+        labelDescriptors:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricDescriptor"
+    MetricDescriptor:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The name of the descriptor
+          example: "agent.id"
+        metricType:
+          type: string
+          example: "tag"
+        type:
+          type: string
+          example: "string"
+        scale:
+          type: integer
+        description:
+          type: string
+        category:
+          type: string
+          example: "host"
+        namespaces:
+          type: array
+          items:
+            type: string
+            example: "host"
+        scopes:
+          type: array
+          items:
+            type: string
+            example: "container"
+        timeAggregations:
+          type: array
+          items:
+            type: string
+            example: "concat"
+        groupAggregations:
+          type: array
+          items:
+            type: string
+            example: "concat"
+        identity:
+          type: boolean
+        canMonitor:
+          type: boolean
+        canGroupBy:
+          type: boolean
+        canFilter:
+          type: boolean
+        heuristic:
+          type: boolean
+          
+    FalcoException:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        fields:
+          $ref: "#/components/schemas/StringOrStringList"
+        comps:
+          $ref: "#/components/schemas/StringOrStringList"
+        values:
+          $ref: "#/components/schemas/ExceptionValues"
+    StringOrStringList:
+      properties: # only one or the other will be populated
+        stringlist:
+          type: array
+          items:
+            type: string 
+        string:
+          type: string      
+    ExceptionValues:
+      properties: # only one or the other will be populated
+        strings:
+          type: array
+          items:
+            type: string
+        tuples:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExceptionValuesTuple"
+    ExceptionValuesTuple:
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StringOrStringList"
+    ExclusionProposals:
+      type: object
+      properties:
+        exclusionProposals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExclusionProposal"
+        totalEvents:
+          type: integer
+    ExclusionProposal:
+      required:
+        - ruleName
+        - exception
+      properties:
+        ruleName:
+          type: string
+        exception:
+          $ref: "#/components/schemas/FalcoException"
+        eventCount:
+          type: integer
+
+    ProfileModelMeta:
+      type: object
+      required:
+        - profileId
+        - profileName
+        - profileVersion
+        - imageId
+        - imageName
+      properties:
+        profileId:
+          type: string
+          description: UUID of the profile, based on a SHA of (imageId + profileVersion).
+        profileName:
+          type: string
+          description: Name of the profile, which includes registry/repository:tag@hash.
+        profileVersion:
+          type: integer
+          description: Version of the profile, incremented when the model is updated.
+        imageId:
+          type: string
+          description: UUID of the image, based on a SHA256 of the image content.
+        imageName:
+          type: string
+          description: Name of the image, as registry/repository:tag.
+    ProfileResult:
+      type: object
+      required:
+        - score
+      properties:
+        score:
+          type: integer
+          description: Value from 0 to 1000 representing the score of the category or subcategory.
+    ProfileProposalRule:
+      allOf:
+        - type: object
+          required:
+            - name
+            - ruleName
+          properties:
+            name:
+              type: string
+              description: Short description of the subcategory.
+              example: files rw
+            ruleName:
+              type: string
+              description: Name of the rule object.
+              example: Unexpected spawned process postgres in image a1b2c3d4e5f6
+        - $ref: "#/components/schemas/RuntimePolicyRuleType"
+        - $ref: "#/components/schemas/ProfileResult"
+    ProfileProposal:
+      allOf:
+        - type: object
+          required:
+            - subcategories
+          properties:
+            subcategories:
+              type: array
+              description: A category has at least one subcategory. Each subcategory refers to one rule and has its own score and status.
+              example: The category `fileSystemProposal` will have an `items` array with subcategories such as "files rw" which refers to a single rule.
+              items:
+                $ref: "#/components/schemas/ProfileProposalRule"
+        - $ref: "#/components/schemas/ProfileResult"
+    ProfileIndex:
+      allOf:
+        - $ref: "#/components/schemas/ProfileModelMeta"
+        - $ref: "#/components/schemas/ProfileResult"
+        - type: object
+          required:
+            - status
+            - profileGroupId
+            - processesProposal
+            - fileSystemProposal
+            - syscallProposal
+            - networkProposal
+            - containerImagesProposal
+          properties:
+            status:
+              type: string
+              description: Status of the model (learning or finalized).
+              enum: [LEARNING, FINALIZED]
+            profileGroupId:
+              type: integer
+              description: Identifier of the profile group.
+            processesProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            fileSystemProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            syscallProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            networkProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            containerImagesProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+    Profiles:
+      type: object
+      properties:
+        offset:
+          type: integer
+          description: The start offset used
+        limit:
+          type: integer
+          description: The limit used. 0 for no limit.
+        canLoadMore:
+          type: boolean
+          description: True if more results can be fetched.
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileIndex"
+          description: The profiles retrieved
+    ProfileGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifier of this profile group.
+        type:
+          type: string
+          description: Specify whether the profile engine aggregates data at the container or host level.
+          enum: [AT_HOSTS, AT_CONTAINERS]
+        aggregationKeys:
+          type: array
+          description: List of metrics used to identify the entity to be profiles (e.g. ["container.image"].
+          items:
+            type: string
+        uniqueIdKeys:
+          type: array
+          description: List of metrics used to identify a sub-entity inside an entity (e.g. ["container.id"].
+          items:
+            type: string
+        profileCount:
+          type: integer
+          description: Number of profiles computed within the profileGroup.
+          items:
+            type: integer
+        lastTimestampUs:
+          type: number
+          format: int64
+    Profile:
+      type: object
+      properties:
+        profileGroupId:
+          type: integer
+          description: Identifier of the related profile group.
+        id:
+          type: string
+          description: UUID of this profile.
+        name:
+          type: string
+          description: Name of the profile inside the profileGroup.
+        mainKeyValues:
+          type: array
+          description: Values for the ProfileGroup.aggregationKeys.
+          items:
+            type: string
+        profileLifeTracker:
+          $ref: "#/components/schemas/ProfileLifeTracker"
+        proposedPolicy:
+          $ref: "#/components/schemas/PolicyV2"
+        proposedRules:
+          type: array
+          description: Array of rules referred to by the proposed policy in `proposedPolicy`, that have not yet been created. Each of the `ruleNames` in `proposedPolicy` must refer to a rule's `name` of either a proposed rule in this array or a rule that already exists.
+          items:
+            $ref: "#/components/schemas/RuntimePolicyRule"
+    ProfileActionResetResponse:
+      type: object
+      description: "Profile reset action response"
+      properties:
+        resetTimeUs:
+          type: integer
+    ProfileLifeTracker:
+      type: object
+      description: keep track of the life of an entity
+      properties:
+        firstSeenUs:
+          type: integer
+        lastSeenUs:
+          type: integer
+        currentTimeUs:
+          type: integer
+        activeTimeUs:
+          type: integer
+

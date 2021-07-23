@@ -1,0 +1,629 @@
+openapi: 3.0.0
+info:
+  title: Admission Controller configuration service
+  description: |
+    API for retrieval and storage of Admission Controller configuration from our backend.
+
+    **Authentication**: Use API token authentication, as the inline-scan and admission controller already use it
+    for the scanning endpoints. Agent key authentication might be added in the future for configuration retrieval
+    from the Admission Controller running in the cluster.
+  version: 0.0.1
+
+security:
+  - apiToken: [ ]
+
+paths:
+  /api/admissionController/v1/clusters:
+    get:
+      summary: Return a list of known clusters.
+      description: Returns a list with the IDs of all the known clusters for this Sysdig Secure account.
+      tags:
+        - Admission Controller
+      responses:
+        200:
+          description: Returns an array containing the list of known cluster.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/cluster'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                pattern: '^max-age=%d+$'
+              description: |
+                The amount of time in seconds it takes for a cached copy of this
+                configuration to expire. After expiring, a client must refresh
+                its version of this configuration by sending another request to
+                the server.
+                For example, Cache-control: max-age=300 means that the returned
+                configuration is valid for 300 seconds, after which the client
+                has to request a newer version.
+              example: 'Cache-control: max-age=300'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        500:
+          $ref: "#/components/responses/internalError"
+
+    put:
+      deprecated: true
+      summary: Register a new cluster
+      description: |
+        Registers a new cluster in the system. This method should only be called
+        from the in-cluster AC.
+
+        **Deprecated**: This endpoint was deprecated in an effort to move AC
+        specific endpoints from user-token-based authentication to an
+        agent-token-based one. As such, this API should be considered legacy and
+        may be removed in future versions of the Admission Controller API.
+        Please use v2 endpoint instead.
+      tags:
+        - Admission Controller
+      parameters:
+        - in: header
+          name: User-Agent
+          schema:
+            type: string
+            pattern: '^AdmissionController\/.+$'
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clusterRegistration'
+      responses:
+        200:
+          description: Cluster updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cluster'
+        201:
+          description: Cluster created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cluster'
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        403:
+          description: Forbidden. Only the in-cluster AC should call this method.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorMessage'
+        422:
+          $ref: '#/components/responses/unprocessableEntity'
+        500:
+          $ref: '#/components/responses/internalError'
+
+  /api/admissionController/v1/clusters/{clusterID}:
+    delete:
+      summary: Remove the cluster from known clusters with all it's assignments.
+      description: Remove the cluster from known clusters and all it's assignments.
+      tags:
+        - Admission Controller
+      parameters:
+        - name: clusterID
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        204:
+          description: The cluster has been deleted.
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+        500:
+          $ref: "#/components/responses/internalError"
+
+  /api/admissionController/v1/clusters/{clusterID}/ping:
+    head:
+      deprecated: true
+      summary: Ping from the AC
+      description: |
+        Ping request from the AC to notify that it is connected.
+
+        **Deprecated**: This endpoint was deprecated in an effort to move AC
+        specific endpoints from user-token-based authentication to an
+        agent-token-based one. As such, this API should be considered legacy and
+        may be removed in future versions of the Admission Controller API.
+        Please use v2 endpoint instead.
+      tags:
+        - Admission Controller
+      parameters:
+        - in: header
+          name: User-Agent
+          required: true
+          schema:
+            type: string
+            pattern: '^AdmissionController\/.+$'
+        - in: path
+          name: clusterID
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: The AC has notified that it was connected.
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+        500:
+          $ref: "#/components/responses/internalError"
+
+  /api/admissionController/v1/clusters/{clusterID}/configuration:
+    get:
+      summary: Return the cluster configuration (UI).
+      description: |
+        Returns the cluster configuration including policy assignments. This
+        should be considered a UI-only endpoint.
+      tags:
+        - Admission Controller
+      parameters:
+        - name: clusterID
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: |
+            Returns the cluster configuration including policy assignments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/clusterConfiguration"
+          headers:
+            ConfTTLsec:
+              schema:
+                type: integer
+              description: |
+                Interval in seconds that should be used by the AC to retrieve
+                the cluster configuration.
+            PingTTLsec:
+              schema:
+                type: integer
+              description: |
+               Interval in seconds that should be used by the AC to call the
+               ping endpoint.
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+        500:
+          $ref: "#/components/responses/internalError"
+
+    put:
+      summary: Sets the cluster configuration including policy assignments.
+      tags:
+        - Admission Controller
+      parameters:
+        - name: clusterID
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/putClusterConfiguration"
+      responses:
+        200:
+          description: The configuration has been stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/clusterConfiguration"
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+        409:
+          description: Assignments cannot be modified since the AC is disconnected.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorMessage'
+        422:
+          $ref: "#/components/responses/unprocessableEntity"
+        500:
+          $ref: "#/components/responses/internalError"
+
+
+  /api/admissionController/v1/policies:
+    get:
+      summary: Return a list of admission controller policies (UI).
+      description: |
+        Returns a list with the IDs of all the existing admission controller
+        policies. This should be considered a UI-only endpoint.
+      tags:
+        - Admission Controller
+      responses:
+        200:
+          description: Returns a list with the IDs of all the existing admission controller policies.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/policy"
+        401:
+          $ref: '#/components/responses/unauthorized'
+        500:
+          $ref: "#/components/responses/internalError"
+    post:
+      summary: Creates a new policy.
+      description: Creates a new policy configuration with a new policyID.
+      tags:
+        - Admission Controller
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/policyConfig"
+      responses:
+        201:
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/policy"
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        409:
+          description: A policy with that name already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorMessage'
+        422:
+          $ref: "#/components/responses/unprocessableEntity"
+
+  /api/admissionController/v1/policies/{policyID}:
+    get:
+      summary: Returns the policy configuration.
+      description: Returns the policy configuration for the requested policyID.
+      tags:
+        - Admission Controller
+      parameters:
+        - name: policyID
+          required: true
+          in: path
+          schema:
+            type: number
+            format: int64
+      responses:
+        200:
+          description: Returns the policy configuration for the requested policyID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/policy"
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+    put:
+      summary: Sets the policy configuration of an existing policy.
+      tags:
+        - Admission Controller
+      parameters:
+        - name: policyID
+          required: true
+          in: path
+          schema:
+            type: number
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/policyConfig"
+      responses:
+        200:
+          description: The configuration has been stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/policy"
+        400:
+          $ref: '#/components/responses/badRequest'
+        401:
+          $ref: '#/components/responses/unauthorized'
+        422:
+          $ref: "#/components/responses/unprocessableEntity"
+        404:
+          $ref: '#/components/responses/notFound'
+        409:
+          description: Cannot update the policy since a policy with that name already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorMessage'
+        500:
+          $ref: "#/components/responses/internalError"
+    delete:
+      summary: Remove the policy configuration
+      description: Remove the policy configuration. Might fail if the policy is being used.
+      tags:
+        - Admission Controller
+      parameters:
+        - name: policyID
+          required: true
+          in: path
+          schema:
+            type: number
+            format: int64
+      responses:
+        204:
+          description: Policy configuration delected.
+        401:
+          $ref: '#/components/responses/unauthorized'
+        404:
+          $ref: '#/components/responses/notFound'
+        409:
+          description: The policy cannot be removed because it is being used in an assignment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorMessage'
+
+  /api/admissionController/v1/status:
+    get:
+      summary: Get the API status
+      description: Get the status of the admission controller API
+      tags:
+        - Admission Controller
+      responses:
+        200:
+          description: The service is up and running.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: The status.
+                    enum:
+                      - ok
+                    example: ok
+
+components:
+  securitySchemes:
+    apiToken:
+      type: http
+      scheme: bearer
+
+  responses:
+    unprocessableEntity:
+      description: Unprocessable Entity. The client should not repeat this request without modification.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorMessage"
+    internalError:
+      description: Internal error processing the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorMessage"
+    notFound:
+      description: The requested resource could not be found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorMessage"
+    unauthorized:
+      description: Unauthorized. The token is missing or not valid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorMessage"
+    badRequest:
+      description: Bad request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorMessage"
+
+  schemas:
+    errorMessage:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        requestID:
+          type: string
+
+
+    clusterRegistration:
+      description: Information to register a cluster.
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: |
+            The ID of the cluster. It must be unique. It can be retrieved from: `kubectl get namespace kube-system -o jsonpath='{.metadata.uid}'`.
+          example: "5e12b6be-a46d-4f33-8d36-431a1391114e"
+        name:
+          type: string
+          description: The name of the cluster, as per k8s_cluster_name agent configuration.
+          example: dev-cluster
+    
+    cluster:
+      allOf:
+        - $ref: '#/components/schemas/clusterRegistration'
+        - type: object
+          required:
+            - defaultBehaviour
+            - enabled
+            - connected
+          properties:
+            defaultBehaviour:
+              type: string
+              description: Default behaviour of the AC in case no policy is matched
+              enum: [allow, reject]
+            enabled:
+              type: boolean
+              description: Admission controller enabled/disabled status for that cluster.
+            connected:
+              type: boolean
+              description: Admission controller connected/disconnected status for that cluster.
+
+    clusterConfiguration:
+      description: Cluster configuration including policy assignments
+      type: object
+      required:
+        - enabled
+        - defaultBehaviour
+        - assignments
+      properties:
+        enabled:
+          type: boolean
+          description: The admission controller should be enabled for this cluster
+        defaultBehaviour:
+          type: string
+          description: Default behaviour of the AC in case no policy is matched
+          enum: [allow, reject]
+        assignments:
+          type: array
+          description: Sorted list of policy assignments for the cluster
+          items:
+            $ref: "#/components/schemas/policyAssignmentItem"
+
+    policyAssignmentItem:
+      description: A policy assigment entry for a cluster
+      type: object
+      required:
+        - namespace
+        - prefix
+        - policy
+      properties:
+        namespace:
+          type: string
+          description: |
+            Namespace in the cluster that must match the admission request to apply this policy.
+            It can be empty to match all namespaces
+          example: dev
+        prefix:
+          type: string
+          description: |
+            The "registry/repository:tag" prefix that must match the admission request to apply this policy.
+            It can be empty to match all prefixes.
+          example: internalregistry.local
+        policy:
+          $ref: "#/components/schemas/policy"
+
+    putClusterConfiguration:
+      description: Cluster configuration to update including policy assignments
+      type: object
+      required:
+        - enabled
+        - defaultBehaviour
+        - assignments
+      properties:
+        enabled:
+          type: boolean
+          description: The admission controller should be enabled for this cluster
+        defaultBehaviour:
+          type: string
+          description: Default behaviour of the AC in case no policy is matched
+          enum: [allow, reject]
+        assignments:
+          type: array
+          description: Sorted list of policy assignments for the cluster
+          items:
+            $ref: "#/components/schemas/putPolicyAssignmentItem"
+
+    putPolicyAssignmentItem:
+      description: A policy assigment entry for a cluster
+      type: object
+      required:
+        - namespace
+        - prefix
+        - policyID
+      properties:
+        namespace:
+          type: string
+          description: |
+            Namespace in the cluster that must match the admission request to apply this policy.
+            It can be empty to match all namespaces
+          example: dev
+        prefix:
+          type: string
+          description: |
+            The "registry/repository:tag" prefix that must match the admission request to apply this policy.
+            It can be empty to match all prefixes.
+          example: internalregistry.local
+        policyID:
+          type: number
+          format: int64
+          description: ID of the policy to apply for admission requests matching the namespace and prefix
+          example: 1
+
+    policyConfig:
+      type: object
+      required:
+        - name
+        - description
+        - rejectIfEvaluationFailed
+        - rejectIfScanOlderThanDays
+        - rejectIfUnscanned
+        - scanIfUnscanned
+      properties:
+        name:
+          type: string
+          description: Policy name
+          example: My custom policy
+        description:
+          type: string
+          description: Policy description
+          example: A custom policy with customized settings
+        rejectIfEvaluationFailed:
+          description: Reject the admission request if the image evaluation Result is "failed"
+          type: boolean
+        rejectIfScanOlderThanDays:
+          description: Reject the admission request if the image evaluation Result is older than N days (0 or null to ignore)
+          type: integer
+          example: 15
+        rejectIfUnscanned:
+          description: Reject the admission request if the image has not been scanned
+          type: boolean
+        scanIfUnscanned:
+          description: Trigger an image scan if the image is unscanned
+          type: boolean
+
+    policy:
+      type: object
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: number
+              format: int64
+              description: Policy identifier.
+              example: 1
+        - $ref: '#/components/schemas/policyConfig'

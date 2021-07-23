@@ -1,0 +1,414 @@
+openapi: 3.0.0
+info:
+  title: Compliance Secure API
+  description: API for Compliance service
+  version: "v1"
+paths:
+  /api/compliance/v1/status:
+    get:
+      summary: Check the status of Compliance service.
+      description: Checks whether the Compliance service is available or not.
+      tags:
+        - Compliance
+      responses:
+        200:
+          description: Successfully returned compliance status.
+          content:
+            application/json:
+              schema:
+                type: "object"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        503:
+          $ref: "#/components/responses/serviceUnavailable"
+
+  /api/compliance/v1/standards:
+    get:
+      summary: List of supported Compliance standards.
+      description: Fetches list of compliance standards supported by Sysdig.
+      tags:
+        - Compliance
+      responses:
+        200:
+          description: Successfully returned compliance standards list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - PCI_3.2
+                  - NIST_800_53
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        503:
+          $ref: "#/components/responses/serviceUnavailable"
+
+  /api/compliance/v1/environments:
+    get:
+      summary: List of supported Compliance environments.
+      description: Fetches list of compliance environments supported by Sysdig.
+      tags:
+        - Compliance
+      responses:
+        200:
+          description: Successfully returned compliance environments list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - kubernetes
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        503:
+          $ref: "#/components/responses/serviceUnavailable"
+
+  /api/compliance/v1/controls/description:
+    get:
+      summary: Get detailed description of a specific control.
+      description: Fetches detailed description of a given control.
+      tags:
+        - Compliance
+      parameters:
+        - $ref: "#/components/parameters/standard"
+        - $ref: "#/components/parameters/environment"
+        - $ref: "#/components/parameters/controlId"
+      responses:
+        200:
+          description: Successfully returned detailed description of specific control.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/controlDescription"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        503:
+          $ref: "#/components/responses/serviceUnavailable"
+
+  /api/compliance/v1/report:
+    get:
+      summary: Get the complete compliance report for a given compliance standard.
+      description: Fetches the complete compliance report for a given compliance standard and environment.
+      tags:
+        - Compliance
+      parameters:
+        - $ref: "#/components/parameters/standard"
+        - $ref: "#/components/parameters/environment"
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/detail"
+        - $ref: "#/components/parameters/showBulkFail"
+        - $ref: "#/components/parameters/status"
+      responses:
+        200:
+          description: Successfully returned the complete compliance report for a given compliance standard and environment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/complianceReport"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        503:
+          $ref: "#/components/responses/serviceUnavailable"
+
+  /api/compliance/v1/report/csv:
+    get:
+      summary: Get the complete compliance report for a given compliance standard in CSV format.
+      description: Fetches the complete compliance report for a given compliance standard and environment in CSV format.
+      tags:
+        - Compliance
+      parameters:
+        - $ref: "#/components/parameters/standard"
+        - $ref: "#/components/parameters/environment"
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/detail"
+      responses:
+        200:
+          description: Successfully returned the complete compliance report for a given compliance standard and environment.
+          content:
+            text/csv:
+              schema:
+                type: object
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        503:
+          $ref: "#/components/responses/serviceUnavailable"
+
+components:
+  schemas:
+    controlDescription:
+      type: object
+      properties:
+        standard:
+          type: string
+          example: PCI_3.2
+        controlId:
+          type: string
+          example: 2.2.1.a
+        description:
+          type: string
+          example: "Long form detailed description of the control"
+
+    complianceReport:
+      type: object
+      properties:
+        pass:
+          type: number
+          format: integer
+          description: "Total number of passing controls for the entire compliance report"
+          example: 30
+        fail:
+          type: number
+          format: integer
+          description: "Total number of failing controls for the entire compliance report"
+          example: 20
+        warn:
+          type: number
+          format: integer
+          description: "Total number of controls in warn state for the entire compliance report"
+          example: 7
+        unchecked:
+          type: number
+          format: integer
+          description: "Total number of controls not checked by Sysdig for the entire compliance report"
+          example: 20
+        checkedTotal:
+          type: number
+          format: integer
+          description: "Total number of controls checked by Sysdig for the entire compliance report"
+          example: 57
+        families:
+          type: array
+          items:
+            $ref: "#/components/schemas/family"
+        bulkFails:
+          type: array
+          items:
+            $ref: "#/components/schemas/bulkFail"
+
+    family:
+      type: object
+      properties:
+        pass:
+          type: number
+          format: integer
+          description: "Total number of passing controls for the compliance family"
+          example: 7
+        total:
+          type: number
+          format: integer
+          description: "Total number of controls for the compliance family"
+          example: 10
+        name:
+          type: string
+          description: "The name / heading of the given compliance family under a compliance section"
+          example: "Do not use vendor-supplied defaults for system passwords and other security parameters"
+        controls:
+          type: array
+          items:
+            $ref: "#/components/schemas/control"
+
+    control:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of a single compliance control per standard"
+          example: "One function per server isolation"
+        id:
+          type: string
+          description: "The control id / number of the given control"
+          example: "2.2.1.a"
+        status:
+          type: string
+          enum:
+            - PASS
+            - FAIL
+            - WARN
+          example: PASS
+        rationale:
+          type: string
+          description: "The explanation of what the checks are for a given control from Sysdig POV. This will be empty when detail=false"
+          example: "Sysdig has falco policies that can be enabled to detect a particular scenario"
+        description:
+          type: string
+          description: "The long form detailed description of a given control. This will be empty when detail=false"
+          example: "Long form decsription"
+        remediations:
+          type: array
+          items:
+            $ref: "#/components/schemas/linkDetail"
+        proofs:
+          type: array
+          items:
+            $ref: "#/components/schemas/linkDetail"
+
+    linkDetail:
+      type: object
+      properties:
+        url:
+          type: string
+          description: "The full url to view the proof / remediation action for a given control"
+          example: "https://secure.sysdig.com/#/policies?tags=PCI_3.2"
+        text:
+          type: string
+          description: "The link text that is to be displayed for a proof/remediation url"
+          example: "Enable k8s auditing"
+        description:
+          type: string
+          description: "The description of what the link / activity is"
+          example: "Schedule a CIS Benchmark to run on your infrastructure"
+
+    bulkFail:
+      type: object
+      properties:
+        action:
+          type: string
+          description: "The short action text for the type of remediation recommended"
+          example: "Enable Falco Policy"
+        controls:
+          type: array
+          items:
+            $ref: "#/components/schemas/simpleControl"
+
+    simpleControl:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of the control"
+          example: "Enable only necessary services, protocols and daemons."
+        id:
+          type: string
+          description: "Control id / number"
+          example: "2.2.1.a"
+        status:
+          type: string
+          enum:
+            - PASS
+            - FAIL
+            - WARN
+          example: FAIL
+
+  parameters:
+    standard:
+      name: standard
+      description: The compliance standard to be queried.
+      required: true
+      in: query
+      schema:
+        type: string
+        enum:
+          - PCI_3.2
+          - SOC2
+          - NIST_800_190
+        example: PCI_3.2, SOC2, NIST_800_190
+
+    controlId:
+      name: controlId
+      description: The control id to be queried for a given standard.
+      required: true
+      in: query
+      schema:
+        type: string
+        enum:
+          - 2.2.1.a
+          - 3.6.1
+          - 2.1.1
+        example: 2.2.1.a, 3.6.1, 2.1.1
+
+    environment:
+      name: environment
+      description: The environemnt to be queried for a given standard.
+      required: true
+      in: query
+      schema:
+        type: string
+        enum:
+          - kubernetes
+        example: kubernetes
+
+    cluster:
+      name: cluster
+      description: The cluster name scope for a given compliance standard.
+      required: false
+      in: query
+      schema:
+        type: string
+        enum:
+          - prod
+          - test
+        example: prod
+
+    detail:
+      name: detail
+      description: To fetch the long form description of every control in the compliance report
+      required: true
+      in: query
+      schema:
+        type: boolean
+        default: true
+        example: false
+
+    showBulkFail:
+      name: showBulkFail
+      description: To be used to determine whether to show bulk failures
+      required: false
+      in: query
+      schema:
+        type: boolean
+        default: true
+        example: false
+
+    status:
+      name: status
+      description: To filter the results by status=FAIL/PASS/WARN
+      required: false
+      in: query
+      schema:
+        type: string
+        enum:
+          - PASS
+          - FAIL
+          - WARN
+        example: WARN
+
+  responses:
+    badRequest:
+      description: The given request is invalid.
+    notFound:
+      description: The compliance info could not be found.
+    unauthorized:
+      description: Invalid or missing auth token.
+    forbidden:
+      description: Forbidden access to view Compliance.
+    serviceUnavailable:
+      description: Service is unavailable.
+

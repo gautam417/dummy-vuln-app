@@ -1,0 +1,142 @@
+#!/usr/bin/env groovy
+
+def kubeConfigs = [
+  'staging-three': 'KUBE_CONF_STG3',
+  'staging-two': 'KUBE_CONF_STG2',
+  'staging': 'KUBE_CONF_STG',
+  'production': 'KUBE_CONF_PROD',
+] as java.lang.Object
+
+pipeline {
+  agent none
+
+  options {
+    // do not checkout the source automatically
+    skipDefaultCheckout()
+  }
+
+  environment {
+    IMAGE_REPO = 'quay.io/sysdig'
+  }
+
+  stages {
+    stage('Build and push images') {
+      agent any
+
+      environment {
+        GITHUB_API_USER = "draios-jenkins@sysdig.com"
+        GITHUB_API_KEY = credentials("jenkins-github-token")
+
+        DOCKER_CONFIG = '.'
+        // The credentials helper will set DOCKER_CREDENTIALS_USR and
+        // DOCKER_CREDENTIALS_PSW
+        DOCKER_CREDENTIALS = credentials('QUAY')
+      }
+
+      steps {
+        checkout scm
+
+        script {
+          IMAGE_TAG = sh(
+            script: "printf \$(git rev-parse --short HEAD)",
+            returnStdout: true
+          )
+        }
+
+        dir('./docs') {
+          script {
+            images = sh(
+              script:"IMAGE_TAG=${IMAGE_TAG} make images",
+              returnStdout: true
+            )
+          }
+
+		  // First build the images
+		  sh "IMAGE_TAG=${IMAGE_TAG} make build-images"
+
+          // Push the images to the registry
+          sh "docker login -u='${DOCKER_CREDENTIALS_USR}' -p='${DOCKER_CREDENTIALS_PSW}' ${IMAGE_REPO}"
+          sh "IMAGE_TAG=${IMAGE_TAG} make push-images"
+
+          // Once pushed, we can remove the images from the local host
+          sh "IMAGE_TAG=${IMAGE_TAG} make delete-images"
+        }
+      }
+
+      post {
+        cleanup {
+          cleanWs()
+        }
+      }
+    }
+
+    stage('Scan images') {
+      agent {
+        label 'builder-backend-j8 || new-builder-backend-j8'
+      }
+
+      steps {
+        writeFile file: 'sysdig_secure_images', text: "${images}"
+        sysdig name: 'sysdig_secure_images', bailOnFail: 'false', bailOnPluginFail: 'false'
+      }
+
+      post {
+        cleanup {
+          cleanWs()
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      when {
+        expression {
+          params.ENVIRONMENT ==~ /(staging-two|staging-three|staging|production)/
+        }
+      }
+
+      agent {
+        label "${params.ENVIRONMENT == 'production' ? 'production-jenkins-kubernetes-deploy-worker' : 'non-production-jenkins-kubernetes-deploy-worker'}"
+      }
+
+      environment {
+        KUBECONFIG = "${env.WORKSPACE}/kubeconfig"
+        PATH = "${env.WORKSPACE}/.build/tools:${env.PATH}"
+      }
+
+      steps {
+        checkout scm
+
+        dir('.build/tools') {
+          // download kubectl
+          sh "curl -sSLO https://dl.k8s.io/v1.16.0/kubernetes-client-linux-amd64.tar.gz"
+          sh 'echo "fccf152588edbaaa21ca94c67408b8754f8bc55e49470380e10cf987be27495a8411d019d807df2b2c1c7620f8535e8f237848c3c1ac3791b91da8df59dea5aa  ./kubernetes-client-linux-amd64.tar.gz" | sha512sum -c -'
+          sh 'tar -zxf kubernetes-client-linux-amd64.tar.gz --strip-components 3'
+          sh "chmod +x ./kubectl"
+
+          // download kustomize
+          sh "curl -sSLO https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v3.3.0/kustomize_v3.3.0_linux_amd64.tar.gz"
+          sh 'echo "4b49e1bbdb09851f11bb81081bfffddc7d4ad5f99b4be7ef378f6e3cf98d42b6  ./kustomize_v3.3.0_linux_amd64.tar.gz" | sha256sum -c -'
+          sh 'tar -zxf kustomize_v3.3.0_linux_amd64.tar.gz'
+          sh "chmod +x ./kustomize"
+        }
+
+        configFileProvider([configFile(fileId: kubeConfigs[params.ENVIRONMENT], targetLocation: 'kubeconfig')]) {
+          script {
+            BUILD_DATE = sh(script: 'date +"%Y-%m-%d"', returnStdout: true).toString().trim()
+            echo "BUILD_DATE: ${BUILD_DATE}"
+
+            dir ("./docs/.k8s/overlays/${ENVIRONMENT}") {
+              sh "kustomize edit set image quay.io/sysdig/api-docs=${IMAGE_REPO}/api-docs:${IMAGE_TAG}"
+              sh "kustomize build | kubectl apply -f -"
+            }
+          }
+        }
+      }
+      post {
+        cleanup {
+          cleanWs()
+        }
+      }
+    }
+  }
+}

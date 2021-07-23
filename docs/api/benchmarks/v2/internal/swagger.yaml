@@ -1,0 +1,114 @@
+openapi: 3.0.0
+info:
+  title: Benchmarks Internal API
+  description: API for Benchmarks V2
+  version: "v2"
+paths:
+  /api/benchmarks/v2/runner/ping:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Runner Ping"
+      description: "Benchmark Runners will repeatedly call this endpoint to check if there are new tasks to be run."
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    customerId:
+                      type: number
+                      example: 88232
+                    runId:
+                      type: string
+                      example: "198237"
+                    taskId:
+                      type: number
+                      example: 34
+                    schema:
+                      type: string
+                      example: "kube_bench_cis-1.6"
+                    module:
+                      type: string
+                      example: "kube-bench"
+                    scope:
+                      type: string
+                      example: >
+                        kubernetes.cluster.name="production"
+                    schedule:
+                      type: string
+                      example: "0 9 * * 1"
+                    timestampNs:
+                      type: number
+                      example: 882322342344
+  /api/benchmarks/v2/runner/result:
+    post:
+      tags: [ "Benchmarks V2" ]
+      summary: "Runner Result"
+      description: "Benchmark Runners will post results to this endpoint."
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    successful:
+                      type: boolean
+                      example: true
+                      description: "Indicates if the benchmark ran successfully"
+                    err:
+                      type: string
+                      example: "benchmark task failed to run"
+                      description: "Present only if successful = false. Contains error message"
+                    taskId:
+                      type: number
+                      example: 34
+                      description: "The ID of the task for which this benchmark was run"
+                    runId:
+                      type: string
+                      example: "198237"
+                      description: "The ID of this specific benchmark run. Analogous to resultId"
+                    schema:
+                      type: string
+                      example: "kube_bench_cis-1.6"
+                      description: "The internal Schema identifier used to run the benchmark"
+                    module:
+                      type: string
+                      example: "kube-bench"
+                      description: "The internal Module used to run the benchmark"
+                    scope:
+                      type: string
+                      example: >
+                        kubernetes.cluster.name="production"
+                      description: "The Scope expression controling where this task was run"
+                    schedule:
+                      type: string
+                      example: "0 9 * * 1"
+                      description: "The schedule at which this task was run"
+                    timestampNs:
+                      type: number
+                      example: 882322342344
+                      description: "The epoch timestamp in nanoseconds at which this task was run"
+                    body:
+                      type: string
+                      description: "A JSON string containing the raw benchmark result"
+                    labels:
+                      type: object
+                      description: "The metatdata labels for the node on which this task was run"
+                      additionalProperties:
+                        type: string
+                      example:
+                        host.hostName: "localhost"
+                        host.mac: "04:2A:D5:CF"
+                        aws.account_id: "98821374"
+                        aws.region: "us-east-1"
+                        aws.instance_id: "12344234"
+                        kubernetes.cluster.name: "production"
+                        kubernetes.node.name: "scanning"

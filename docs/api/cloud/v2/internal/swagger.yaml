@@ -1,0 +1,266 @@
+openapi: 3.0.0
+info:
+  title: Cloud Security API
+  description: API for Cloud service
+  version: "v2"
+paths:
+  /api/cloud/v2/accounts:
+    post:
+      summary: Register a new Cloud Account.
+      description: Registers a Cloud Account upon success will create account metadata.
+      tags:
+        - Cloud
+      responses:
+        200:
+          description: "Account is successfully created"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  customerTier:
+                    type: string
+                    example: enterprise
+                  status:
+                    type: string
+                    example: active
+                  accountLimit:
+                    type: number
+                    example: 50
+                  regionLimit:
+                    type: number
+                    example: -1
+                  customerID:
+                    type: number
+                    example: 683
+                  expirationDate:
+                    type: number
+                    example: 0
+                  maxScansLimit:
+                    type: number
+                    example: -1
+                  segmentToken:
+                    type: number
+                    example: v0npn8wfSFqZCOfJjDqm8d6t8fiBYE3S
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        409:
+          description: "Account is already created."
+        500:
+          $ref: "#/components/responses/internalServer"
+    get:
+      summary: List the Cloud Account subscriptions.
+      description: Returns a list of all cloud accounts registered for a customer.
+      tags:
+        - Cloud
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/CloudAccountResponseBody"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        500:
+          $ref: "#/components/responses/internalServer"
+  /api/cloud/v2/accounts/{accountId}/enable:
+    post:
+      summary: Enables a Cloud Account Role.
+      description: Indicates a cloud account has provisioned a role that can be assumed by Sysdig.
+      tags:
+        - Cloud
+      parameters:
+        - name: "accountId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        500:
+          $ref: "#/components/responses/internalServer"
+  /api/cloud/v2/accounts/{accountId}/disable:
+    post:
+      summary: Disables a Cloud Account Role.
+      description: Indicates a cloud account has removed a role that can be assumed by Sysdig.
+      tags:
+        - Cloud
+      parameters:
+        - name: "accountId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        500:
+          $ref: "#/components/responses/internalServer"
+  /api/cloud/v2/accounts/{accountId}/aliases:
+    get:
+      summary: Fetch the Cloud Account alias.
+      description: Fetches the alias for a given cloud accountID registered for a customer.
+      tags:
+        - Cloud
+      parameters:
+        - name: "accountId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    description: "The cloud account identifier"
+                    example: 237944556329
+                  provider:
+                    type: string
+                    description: "The cloud provider's name"
+                    example: aws
+                  alias:
+                    type: string
+                    description: "Friendly name to identify"
+                    example: Sysdig Prod
+                  roleAvailable:
+                    type: "boolean"
+                    description: "Whether the cloud account's role is available."
+                    example: false
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServer"
+    put:
+      summary: Updates the alias field of a Cloud Account.
+      description: Edits the alias field of a given accountId.
+      tags:
+        - Cloud
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AliasUpdateRequest'
+
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServer"
+
+components:
+  schemas:
+    CloudAccountResponseBody:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "The cloud account identifier"
+          example: 237944556329
+        provider:
+          type: string
+          description: "The cloud provider's name"
+          example: aws
+        roleEnabled:
+          type: "boolean"
+          description: "Whether the cloud account's provisioned role is enabled"
+          example: false
+        alias:
+          type: string
+          description: "Friendly name to identify"
+          example: Sysdig Prod
+        regions:
+          type: array
+          description: "A list of cloud regions where the cloud account is active."
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: "The cloud region identifier"
+                example: us-west-2
+              state:
+                type: string
+                description: "Whether the region is active"
+                example: active
+              createdAt:
+                type: "string"
+                example: "2020-11-15T01:16:02.469729Z"
+              lastSeenAt:
+                type: "string"
+                example: "2020-11-15T01:16:02.469729Z"
+    AliasUpdateRequest:
+      type: object
+      description: Alias update request.
+      properties:
+        alias:
+          type: string
+          description: The friendly name of the cloud account.
+          example: Sysdig Dev
+  responses:
+    badRequest:
+      description: The given request is invalid.
+    unauthorized:
+      description: Invalid or missing auth token.
+    forbidden:
+      description: Account is forbidden (inactive/expired customer).
+    notFound:
+      description: The cloud info could not be found.
+    internalServer:
+      description: The server encountered an unexpected condition.

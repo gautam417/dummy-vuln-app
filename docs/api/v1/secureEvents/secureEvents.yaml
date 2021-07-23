@@ -1,0 +1,902 @@
+openapi: 3.0.0
+info:
+  title: Secure Events API
+  description: API for Secure Events service
+paths:
+  api/v1/secureEvents:
+    get:
+      summary: Retrieves a secure events feed
+      description: |
+        Retrieves the list of events that match a filter given a specified
+        time range or cursor.
+        The pair `from` and `to` and the `cursor` parameter are mutually
+        exclusive. If you supply a `from` and `to` you must not supply a
+        `cursor` and vice-versa.
+        If you supply a `cursor` then the `prev` field inside the response is
+        set if and only if there are events before the first event returned, while
+        the `next` field inside the response is set if and only if there are
+        events after the last event returned. If, instead, you supply the `from`
+        and `to` pair then the `prev` and `next` fields inside the response are
+        always set, because in that case there is no efficient way for the backend
+        to verify if `next` and `prev` events actually exist. For this reason, the
+        best way to use this API is to supply the `from` and `to` pair at the
+        first request and then use the `prev` and `next` cursors to fetch events
+        before and after the events returned.
+        Please, do note that if you supply `from` and `to` and receive the `prev`
+        and `next` cursors, any subsequent request made by supplying that `next`
+        or `prev` cursor will return results that are not filtered by the `from`
+        and `to` you provided in the first request.
+        Finally, the difference between `from` and `to` cannot be greater than
+        2 weeks.
+      tags:
+        - Secure Events
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/filter"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/specialCategory"
+      responses:
+        200:
+          description: The secure events feed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/eventsFeed"
+        400:
+          $ref: "#/components/responses/badRequest"
+        422:
+          $ref: "#/components/responses/unprocessableEntity"
+        500:
+          $ref: "#/components/responses/internalServerError"
+
+  api/v1/secureEvents/status:
+    get:
+      summary: Ping the status
+      description: |
+        Retrieves a 200 to double check if the `secureEvents` feature on the
+        backend is available.
+      tags:
+        - Secure Events
+      responses:
+        200:
+          description: The supported secure events filters.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: The status.
+                    enum:
+                      - ok
+                    example: ok
+
+  api/v1/secureEvents/scope/operators:
+    get:
+      summary: Get supported scope operators
+      descripton: |
+        Secure Events BE supported scope operators
+      tags:
+        - Secure Events
+      responses:
+        200:
+          description: ...
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/operators"
+
+  api/v1/secureEvents/hasEvents:
+    get:
+      summary: Verify presence of old events
+      description: |
+        Verify if there are new/legacy events in the store.
+      tags:
+        - Secure Events
+      responses:
+        200:
+          description: Whether or not there are new/legacy events.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - hasLegacyEvents
+                  - hasNewEvents
+                properties:
+                  hasLegacyEvents:
+                    type: boolean
+                    description: |
+                      This is `true` if and only if there are no new events (i.e.
+                      events in the new indices) in the time range from 30 days
+                      ago to 29 days ago. This assumes that once the Secure Events
+                      feature is deployed, all the events are written in the new
+                      indices only; therefore, there are legacy events only if
+                      there are no events in the new indices for that time range.
+                  hasNewEvents:
+                    type: boolean
+                    description: |
+                      This is `true` if and only if there is at least a new event
+                      in the time range from 1 day ago to now.
+                    example: true
+        500:
+          $ref: "#/components/responses/internalServerError"
+
+  api/v1/secureEvents/scopeFilters:
+    get:
+      summary: Retrieves the supported events feed scope filters
+      description: |
+        Retrieves the whitelist of supported secure events scope filters that can
+        be used inside the `filter` parameter while retrieving the secure events
+        feed.
+      tags:
+        - Secure Events
+      responses:
+        200:
+          description: The supported secure events scope filters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/scopeFilters"
+        500:
+          $ref: "#/components/responses/internalServerError"
+
+  api/v1/secureEvents/{eventId}:
+    get:
+      summary: Retrieves an event given its id
+      description: |
+        Retrieves an event with a given id.
+      tags:
+        - Secure Events
+      parameters:
+        - $ref: "#/components/parameters/eventId"
+      responses:
+        200:
+          description: Event with the given id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/event"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+
+
+  api/v1/eventsDispatch/ingest:
+    post:
+      summary: Send an event to secure
+      description: |
+        Send an event to secure to be processed by the pipeline
+      tags:
+        - Secure Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ingestedEvent"
+      responses:
+        200:
+          description: The event was ingested successfully
+        400:
+          description: The event provided is not valid json
+        403:
+          description: The provided access token is invalid
+        500:
+          description: There was a failure processing the events
+
+components:
+  parameters:
+    from:
+      name: from
+      description: |
+        From, expressed in nanoseconds. The difference between `from` and `to`
+        cannot be greater than 2 weeks.
+      in: query
+      required: false
+      schema:
+        type: number
+        format: int64
+        minimum: 0
+        example: 1546300800000000000
+    to:
+      name: to
+      description: |
+        To, expressed in nanoseconds. The difference between `from` and `to`
+        cannot be greater than 2 weeks.
+      in: query
+      required: false
+      schema:
+        type: number
+        format: int64
+        minimum: 0
+        example: 1546300800000000000
+    cursor:
+      name: cursor
+      description: >
+        Cursor is a string used to retrieve data given a specific context. The
+        context can either be events feed before a certain event, after it or
+        its surrounding. See the `prev`, `next` and `cursor` fields inside the
+        response for further details.
+      in: query
+      required: false
+      schema:
+        type: string
+        example: LTltNGUybXIwdWkzZThhMjE1bjRn
+    filter:
+      name: filter
+      description: |
+        Query language expression for filtering results. It is a subset of the
+        full metrics query language used in monitoring.
+
+        Operators:
+        - `and`, `or` and `not` logical operators (i.e. `pid = 1 and ppid = 2`)
+        - `=`, `!=`, `>`, `>=`, `<` and `<=` comparison operators (i.e. `pid = 1`)
+        - `in` to check inclusion in a list of values (i.e. `pid in (1, 2)` or
+        `clientipv4 in ("127.0.0.1", "192.168.0.1")`)
+
+        This query language does not support the full set of metrics supported
+        in the monitor query language, but instead supports a set of fields
+        proper to each audit events type.
+
+        The list of supported fields can be retrieved through the
+        `eventsFeedFilters` endpoint. In addition to those fields, also these
+        fields are supported:
+        - `severity` as numeric value in the `[0, 7]` range
+        - `category` as string value
+        - `originator` as string value (either  `policy` or `scanning`)
+        - `name` as string value
+        - `freeText` as string value
+        - `source` as string value
+        - `agentId` as numeric value
+        - `containerId` as string value
+        - `machineId` as string value
+        - `ruleName` as string value
+        - `ruleType` as numeric value
+        - `ruleSubType` as numeric value
+        - `policyId` as numeric value
+        - `alertName` as string value
+        - `trigger` as string value
+        - `image.id` as string value
+        - `image.registry` as string value
+        - `image.repo` as string value
+        - `image.tag` as string value
+        - `image.digest` as string value
+      in: query
+      required: false
+      schema:
+        type: string
+        example: agent.id=1
+    limit:
+      name: limit
+      description: Limit the number of events to return.
+      in: query
+      schema:
+        type: number
+        format: integer
+        example: 50
+        minimum: 1
+        maximum: 999
+        default: 100
+    specialCategory:
+      name: specialCategory
+      description: |
+        How to handle special events categories, like the policy simulation
+        (advisor).
+        - `exclude_simulation` excludes events with category `simulation`
+        - `only_simulation` returns only events with category `simulation`
+      in: query
+      schema:
+        type: string
+        enum:
+          - exclude_simulation
+          - only_simulation
+        example: exclude_simulation
+        default: exclude_simulation
+    eventId:
+      name: eventId
+      description: The event id.
+      required: true
+      in: path
+      schema:
+        type: string
+        example: 15cbf54e34df95404caad1c988cf7c42
+
+  schemas:
+    operators:
+      type: array
+      items:
+        type: string
+        enum:
+          - 'is'
+          - 'is not'
+          - 'in'
+          - 'not in'
+          - '>'
+          - '>='
+          - '<'
+          - '<='
+    eventsFeed:
+      type: object
+      required:
+        - page
+        - data
+      properties:
+        page:
+          $ref: "#/components/schemas/page"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/event"
+    page:
+      type: object
+      required:
+        - total
+      properties:
+        total:
+          type: number
+          format: integer
+          description: |
+            The number of events returned. This number is always less or
+            equal the limit specified in the request.
+          example: 10
+        prev:
+          type: string
+          description: |
+            The cursor that can be used to fetch a set of events before the
+            first event returned in the `data` array.
+            If this value is unset, then there are no events before the first
+            event returned in the `data` array.
+            By providing this value as `cursor` in a GET `secureEvents` request,
+            you will get the set of events that precede the first event returned
+            in the `data` array.
+          example: LTltNGUybXIwdWkzZThhMjE1bjRn
+        next:
+          type: string
+          description: |
+            The cursor that can be used to fetch a set of events after the last
+            event returned in the `data` array.
+            If this value is unset, then there are no events after the last
+            event returned  in the `data` array.
+            By providing this value as `cursor` in a GET `secureEvents` request,
+            you will get the set of events after the last event returned in the
+            `data` array.
+          example: KzltNGUybXIwdWkzZThhMjE1bjRn
+    event:
+      type: object
+      required:
+        - id
+        - cursor
+        - timestamp
+        - customerId
+        - originator
+        - source
+        - category
+        - name
+        - description
+        - severity
+        - machineId
+        - actions
+        - labels
+      properties:
+        id:
+          type: string
+          description: The event id.
+          example: 15cbf54e34df95404caad1c988cf7c42
+        cursor:
+          type: string
+          description: |
+            The cursor that can be used to fetch a set of events surrounding
+            this same event. By providing this value as `cursor` in a GET
+            `secureEvents` request, you will get the set of events surrounding
+            this current event.
+          example: LTltNGUybXIwdWkzZThhMjE1bjRn
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp the event occured.
+          example: "2020-04-21T16:08:08.845336507Z"
+        customerId:
+          type: number
+          format: int64
+          description: The customer id.
+          example: 1
+        originator:
+          type: string
+          description: Type of the event (i.e. policy, scanning etc.).
+          example: policy
+        source:
+          type: string
+          description: Source of the event.
+          example: k8s_audit
+        category:
+          type: string
+          description: The event category.
+          enum:
+            - runtime
+            - simulation
+          example: runtime
+        name:
+          type: string
+          description: The event name.
+          example: Launch Privileged Container
+        description:
+          type: string
+          description: The event description.
+          example: |
+            Identify a container being created with privileged=true
+        severity:
+          type: number
+          description: The event severity.
+          minimum: 0
+          maximum: 7
+          example: 4
+        agentId:
+          type: number
+          format: int64
+          description: The agent id.
+          example: 1
+        containerId:
+          type: string
+          description: The container id.
+          example: df5f83c5d5e5
+        machineId:
+          type: string
+          description: The machine id (i.e. hostname).
+          example: 02:37:22:86:ce:53
+        actions:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/captureAction"
+              - $ref: "#/components/schemas/containerPausedAction"
+              - $ref: "#/components/schemas/containerStoppedAction"
+              - $ref: "#/components/schemas/containerKilledAction"
+              - $ref: "#/components/schemas/scanImageAction"
+        content:
+          type: object
+          description: |
+            Body of the specific event. It contains fields that are specific to
+            a single event and are not shared among different event types.
+          oneOf:
+            - $ref: "#/components/schemas/policyEventContent"
+            - $ref: "#/components/schemas/scanningEventContent"
+        label:
+          type: object
+          description: Key value pairs of labels.
+          additionalProperties:
+            type: string
+    captureAction:
+      title: Capture
+      type: object
+      description: Capture action performed once the event happened.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Capture action type.
+          enum:
+            - capture
+        successful:
+          type: boolean
+          description: Whether or not the action was completed successfully.
+        errMsg:
+          description: |
+            When `successful == false`, details on why the action failed.
+          type: string
+        token:
+          type: string
+          description: Token that can be related to later messages.
+          example: "4f24c92e-48f5-45ab-84a5-c394f07e855e"
+        afterEventNs:
+          type: number
+          format: int64
+          description: |
+            Period of time to capture after event in nanoseconds.
+          example: 18000000000
+        beforeEventNs:
+          type: number
+          format: int64
+          description: |
+            Period of time to capture before event in nanoseconds.
+          example: 5000000000
+    containerPausedAction:
+      title: Container paused
+      type: object
+      description: Container paused action performed once the event happened.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Container paused action type.
+          enum:
+            - container paused
+        successful:
+          type: boolean
+          description: Whether or not the action was completed successfully.
+        errMsg:
+          description: |
+            When `successful == false`, details on why the action failed.
+          type: string
+        token:
+          type: string
+          description: Token that can be related to later messages.
+          example: "4f24c92e-48f5-45ab-84a5-c394f07e855e"
+    containerStoppedAction:
+      title: Container stopped
+      type: object
+      description: Container stopped action performed once the event happened.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Container stopped action type.
+          enum:
+            - container stopped
+        successful:
+          type: boolean
+          description: Whether or not the action was completed successfully.
+        errMsg:
+          description: |
+            When `successful == false`, details on why the action failed.
+          type: string
+        token:
+          type: string
+          description: Token that can be related to later messages.
+          example: "4f24c92e-48f5-45ab-84a5-c394f07e855e"
+    containerKilledAction:
+      title: Container killed
+      type: object
+      description: Container killed action performed once the event happened.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Action type.
+          enum:
+            - container killed
+        successful:
+          type: boolean
+          description: Whether or not the action was completed successfully.
+        errMsg:
+          description: |
+            When `successful == false`, details on why the action failed.
+          type: string
+        token:
+          type: string
+          description: Token that can be related to later messages.
+          example: "4f24c92e-48f5-45ab-84a5-c394f07e855e"
+    scanImageAction:
+      title: Scan image
+      type: object
+      description: Scan image action performed once the event happened.
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Scan image action type.
+          enum:
+            - scan image
+    policyEventContent:
+      title: Policy Event
+      type: object
+      required:
+        - policyId
+        - ruleName
+        - ruleType
+        - ruleSubType
+        - ruleTags
+        - output
+        - fields
+        - falsePositive
+        - matchedOnDefault
+      properties:
+        policyId:
+          type: number
+          format: integer
+          description: Policy ID.
+          example: 2
+        ruleName:
+          type: string
+          description: Rule name.
+          example: Terminal shell in container
+        ruleType:
+          type: number
+          format: integer
+          description: Rule type.
+          example: 6
+        ruleSubType:
+          type: number
+          format: integer
+          description: Rule subtype.
+          example: 0
+        ruleTags:
+          description: Rule tags.
+          type: array
+          items:
+            type: object
+          example:
+            - mitre_credential_access
+            - mitre_discovery
+            - filesystem
+        output:
+          type: string
+          description: Output of the policy event.
+          example: |
+            File below a known binary directory opened for writing...
+        fields:
+          type: object
+          description: |
+            Attribute fields of the policy event.
+        falsePositive:
+          type: boolean
+          default: false
+          example: false
+        matchedOnDefault:
+          type: boolean
+          default: false
+          example: false
+    scanningEventContent:
+      title: Scanning Event
+      type: object
+      required:
+        - alertId
+        - trigger
+        - alertName
+        - alertUrl
+        - scanResultUrl
+        - image
+        - result
+      properties:
+        alertId:
+          type: string
+          description: The alert id.
+          example: abcdaaaaaa
+        trigger:
+          type: string
+          description: Event trigger.
+          example: Unscanned Image
+        alertName:
+          type: string
+          description: Alert Name.
+          example: Notify CVE Result change in store frontend
+        alertUrl:
+          type: string
+          description: Edit alert link.
+        scanResultUrl:
+          type: string
+          description: Scan result link.
+        image:
+          description: Docker image metadata.
+          type: object
+          required:
+            - id
+            - repo
+            - registry
+            - tag
+            - digest
+          properties:
+            id:
+              type: number
+              format: int64
+              description: Image ID.
+              example: 535353636387389730389078363937093809383
+            repo:
+              type: string
+              description: Image repository.
+              example: alpine
+            registry:
+              type: string
+              description: Image registry.
+              example: quay.io
+            tag:
+              type: string
+              description: Image tag.
+              example: 3.11.2
+            digest:
+              type: string
+              description: Image digest.
+              example: sha256:1234432342323232323232323232323232323232
+        result:
+          type: string
+          description: Scanning Result.
+          enum:
+            - Failed
+            - Passed
+          example: Failed
+        cveUpdate:
+          type: object
+          required:
+            - added
+            - updated
+            - removed
+          properties:
+            added:
+              type: array
+              items:
+                $ref: "#/components/schemas/cve"
+            updated:
+              type: array
+              items:
+                $ref: "#/components/schemas/cve"
+            removed:
+              type: array
+              items:
+                $ref: "#/components/schemas/cve"
+    cve:
+      type: object
+      required:
+        - id
+        - severity
+        - packageName
+        - fixAvailable
+      properties:
+        id:
+          type: string
+        feed:
+          type: string
+        feedGroup:
+          type: string
+        fixAvailable:
+          type: boolean
+        packageName:
+          type: string
+        packageType:
+          type: string
+        packageVersion:
+          type: string
+        severity:
+          type: string
+        url:
+          type: string
+        vulnerablePackage:
+          type: string
+    scopeFilters:
+      type: object
+      description: List of supported scope filters
+      required:
+        - labelDescriptors
+      properties:
+        labelDescriptors:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - type
+            properties:
+              id:
+                type: string
+                description: The supported scope filter key.
+              type:
+                type: string
+                description: Type of the scope filter value.
+                enum:
+                  - string
+                  - number
+                  - date
+                  - ip
+          example:
+            [
+              { id: container.image.repo, type: string },
+              { id: container.image.tag, type: string },
+              { id: container.name, type: string },
+              { id: container.label, type: string },
+              {
+                id: container.label.io.kubernetes.container.name,
+                type: string,
+              },
+              { id: container.label.io.kubernetes.pod.name, type: string },
+              { id: container.label.io.kubernetes.pod.namespace, type: string },
+              { id: container.label.maintainer, type: string },
+              { id: host.hostName, type: string },
+              { id: host.ip.private, type: ip },
+              { id: host.ip.public, type: ip },
+              { id: host.mac, type: string },
+              { id: kubernetes.cluster.name, type: string },
+              { id: kubernetes.daemonSet.name, type: string },
+              { id: kubernetes.namespace.name, type: string },
+              { id: kubernetes.pod.name, type: string },
+              { id: kubernetes.replicaSet.name, type: string },
+              { id: kubernetes.statefulSet.name, type: string },
+            ]
+    error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: The error message.
+        requestId:
+          type: string
+          description: The request ID.
+    ingestedEvent:
+      type: object
+      required:
+        - uuid
+        - time
+        - rule
+        - priority
+        - output
+        - output_fields
+      properties:
+        uuid:
+          type: string
+          description: UUID for the message
+        time:
+          type: string
+          description: Time in RFC3339 format
+        rule:
+          type: string
+          description: Name of the policy
+        priority:
+          type: string
+          description: How bad is it?
+          enum:
+            - emergency
+            - alert
+            - critical
+            - error
+            - warning
+            - informational
+            - notice
+            - debug
+            - any other value will be treated same as error
+        output:
+          type: string
+          description: Output from the rule - text describing the issue
+        source:
+          type: string
+          description: How was this event recorded
+        tags:
+          type: array
+          description: A list of tags for the event
+          items:
+            type: string
+        output_fields:
+          type: object
+          description: A hashmap containing variables and values of the policy
+
+  responses:
+    badRequest:
+      description: The request is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    unprocessableEntity:
+      description: |
+        Attempting to retrieve a secure events feed by using a filter that
+        contains unsupported metrics.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    internalServerError:
+      description: |
+        The server encountered an unexpected condition that prevented it from
+        fulfilling the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    notFound:
+      description: The event could not be found.
+
+  tags:
+    SecureEvents:
+      name: Secure Events
+      description: |
+        The Secure Events API returns data related to secure events.

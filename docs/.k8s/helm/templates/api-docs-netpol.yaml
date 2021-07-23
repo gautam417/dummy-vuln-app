@@ -1,0 +1,94 @@
+{{- if and (contains "secure" .Values.apps) (.Values.sysdig.secure.apiDocs.enabled) }}
+{{- if .Values.enableNetworkPolicy }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: np-sysdigcloud-api-docs-out-001
+  namespace: {{ .Values.namespace }}
+  labels:
+    scope: allow-access-to-labeled-pods
+    object: sysdigcloud-api-docs
+    origin: sysdig-app
+    direction: egress
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      np-object-class: sysdigcloud-api-docs
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              np-sysdigcloud-api-docs: allow-access
+        - podSelector:
+            matchLabels:
+              np-allow: all
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: np-sysdigcloud-api-docs-out-002
+  namespace: {{ .Values.namespace }}
+  labels:
+    scope: allow-dns
+    object: sysdigcloud-api-docs
+    origin: sysdig-app
+    direction: egress
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      np-object-class: sysdigcloud-api-docs
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: np-sysdigcloud-api-docs-in-001
+  namespace: {{ .Values.namespace }}
+  labels:
+    scope: provided-service-public-accessible-port
+    object: sysdigcloud-api-docs
+    origin: sysdig-app
+    direction: ingress
+spec:
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      np-object-class: sysdigcloud-api-docs
+  ingress:
+    - ports:
+        - port: 12345
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: np-svc-sysdigcloud-api-docs-out-001
+  namespace: {{ .Values.namespace }}
+  labels:
+    scope: allow-svc-sysdigcloud-api-docs
+    object: svc-sysdigcloud-api-docs
+    origin: sysdig-app
+    direction: egress
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      np-sysdigcloud-api-docs: allow-access
+  egress:
+    - ports:
+        - port: 12345
+          protocol: TCP
+{{- end }}
+{{- end }}

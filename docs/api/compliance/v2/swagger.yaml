@@ -1,0 +1,6 @@
+openapi: 3.0.0
+info:
+  title: Compliance Secure API
+  description: API for Compliance service
+  version: "v2"
+paths:

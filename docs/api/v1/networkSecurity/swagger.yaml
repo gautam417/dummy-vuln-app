@@ -1,0 +1,374 @@
+openapi: 3.0.0
+info:
+  title: Networking Security API
+  description: API for Networking Security
+  version: v1
+paths:
+  /api/v1/networkSecurity/namespaces/{namespaceName}/simulatedPolicies:
+    post:
+      summary: Creates a Kubernetes Network Policy
+      description: Creates a Kubernetes Network Policy
+      tags:
+      - Network Security
+      parameters:
+        - $ref: "#/components/parameters/namespaceName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KubernetesNetworkPolicyRequest"
+      responses:
+        200:
+          description: Indicates the requested KNP was successfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KubernetesNetworkPolicy"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/networkSecurity/networkPolicyOverlayOwnerTopology:
+    post:
+      summary: Creates a communication topology graph around the specified owner
+      description: Creates a communication topology graph around the specified owner; if KNP spec is provided, marks communication edges as 'blocked' if they are blocked by the KNP
+      tags:
+      - Network Security
+      parameters:
+        - $ref: "#/components/parameters/namespace"
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/name"
+        - $ref: "#/components/parameters/kind"
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KubernetesNetworkPolicyRequest"
+      responses:
+        200:
+          description: Indicates the requested topology graph is sucessfully created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopologyResponse"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/networkSecurity/status:
+    get:
+      summary: Ping the status
+      description: |
+        Retrieves a 200 to double check if the network security feature on the
+        backend is available.
+      tags:
+      - Network Security
+      responses:
+        200:
+          description: Indicates the network security feature is available
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: The status.
+                    enum:
+                      - ok
+                    example: ok
+
+components:
+  parameters:
+    namespace:
+      name: namespace
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The name of a kubernetes namespace
+    namespaceName:
+      name: namespaceName
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The name of a kubernetes namespace
+    cluster:
+      name: cluster
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The name of a kubernetes cluster
+    name:
+      name: name
+      in: query
+      required: true
+      schema:
+        type: string
+      description: The name of a pod owner
+    kind:
+      name: kind
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - Service
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+          - Pod
+          - Namespace
+      description: Specifies how to group pods
+    from:
+      name: from
+      in: query
+      required: true
+      schema:
+        type: integer
+      description: A unix timestamp in seconds of specifying the initial time of a range
+    to:
+      name: to
+      in: query
+      required: true
+      schema:
+        type: integer
+      description: A unix timestamp in seconds of specifying the end time of a range
+
+  responses:
+    BadRequest:
+      description: Indicates a parameter, header or another quality of the request was malformed. More information about 400 can be found at https://httpstatuses.com/400
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: The user failed to authenticate. More information about 401 can be found at https://httpstatuses.com/401
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: The user successfully authenticated but has insufficient permissions. More information about 403 can be found at https://httpstatuses.com/403
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: a human readable description of the error
+          example: startDate cannot be more than 90 days earlier than endDate
+        referenceId:
+          type: string
+          description: Reference id for error tracking
+          example: d2c5bb61-8b51-4b58-ad9d-1412b63e75de
+    KubernetesNetworkPolicyRequest:
+      type: object
+      properties:
+        spec:
+          $ref: '#/components/schemas/NetworkPolicySpec'
+    NetworkPolicySpec:
+      type: object
+      properties:
+        ingress:
+          type: array
+          description: List of ingress rules to be applied to the selected pods
+          items:
+            $ref: '#/components/schemas/NetworkPolicyIngressRule'
+        egress:
+          type: array
+          description: List of egress rules to be applied to the selected pods
+          items:
+            $ref: '#/components/schemas/NetworkPolicyEgressRule'
+        podSelector:
+          description: Selects the pods to which this NetworkPolicy object applies. An empty podSelector matches all pods in this namespace.
+          $ref: '#/components/schemas/LabelSelector'
+        policyTypes:
+          type: array
+          description: List of rule types that the NetworkPolicy relates to
+          items:
+            $ref: '#/components/schemas/PolicyType'
+    NetworkPolicyIngressRule:
+      type: object
+      properties:
+        from:
+          type: array
+          description: List of sources which should be able to access the pods selected for this rule
+          items:
+            $ref: '#/components/schemas/NetworkPolicyPeer'
+        ports:
+          type: array
+          description: List of ports which should be made accessible on the pods selected for this rule
+          items:
+            $ref: '#/components/schemas/NetworkPolicyPort'
+    NetworkPolicyEgressRule:
+      type: object
+      properties:
+        to:
+          type: array
+          description: List of destinations for outgoing traffic of pods selected for this rule
+          items:
+            $ref: '#/components/schemas/NetworkPolicyPeer'
+        ports:
+          type: array
+          description: List of destination ports for outgoing traffic
+          items:
+            $ref: '#/components/schemas/NetworkPolicyPort'
+    NetworkPolicyPeer:
+      type: object
+      properties:
+        ipBlock:
+          description: Defines policy on a particular IPBlock
+          $ref: '#/components/schemas/IPBlock'
+        namespaceSelector:
+          description: Matches all pods in all namespaces selected by this label selector
+          $ref: '#/components/schemas/LabelSelector'
+        podSelector:
+          description: Selects all matching pods in the namespace
+          $ref: '#/components/schemas/LabelSelector'
+    IPBlock:
+      type: object
+      properties:
+        cidr:
+          type: string
+          description: Represents an IP Block
+          example: "192.168.1.1/24"
+        except:
+          type: array
+          description: CIDRs that should not be included within an IP Block
+          items:
+            type: string
+            description: a CIDR
+            example: "192.168.1.1/24"
+    NetworkPolicyPort:
+      type: object
+      properties:
+        port:
+          type: integer
+          description: port on the pod
+        protocol:
+          type: string
+          description: The protocol by which traffic must match. Defaults to TCP if not specified. In the future UDP and SCTP may be supported.
+          enum:
+            - TCP
+    LabelSelector:
+      type: object
+      properties:
+        matchExpressions:
+          type: array
+          description: A list of label selector requirements. The requirements are ANDed.
+          items:
+            $ref: '#/components/schemas/LabelSelectorRequirement'
+        matchLabels:
+          type: object
+          description: A map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+    LabelSelectorRequirement:
+      type: object
+      properties:
+        key:
+          type: string
+          description: The label key that the selector applies to.
+        operator:
+          type: string
+          description: Represents a key's relationship to a set of values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty.
+          enum:
+            - In
+            - NotIn
+            - Exists
+            - DoesNotExist
+        values:
+          type: array
+          description: A list of operands
+          items:
+            type: string
+    PolicyType:
+      type: string
+      description: A rule type
+      enum:
+        - Ingress
+        - Egress
+    KubernetesNetworkPolicy:
+      type: string
+      description: The text of a proposed Kubernetes Network Policy
+    Metadata:
+      description: Metadata, could be attached to a graph, an edge, or a vertex
+      type: object
+      additionalProperties:
+        type: string
+    Edge:
+      type: object
+      description: A directed edge, indicates a relationship between two vertices
+      properties:
+        type:
+          $ref: '#/components/schemas/EdgeType'
+        source:
+          type: string
+          description: ID of the source vertex
+        destination:
+          type: string
+          description: ID of the destination vertex
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+    EdgeType:
+      type: string
+      enum: ["endpoints","communication"]
+      description: Type of edge relationship
+    VertexType:
+      type: string
+      enum: ["service", "deployment", "statefulset", "daemonset", "namespace", "unresolvedip"]
+      description: Vertex type
+    Vertex:
+      type: object
+      description: Pod Owner
+      properties:
+        id:
+          type: string
+          description: Vertex ID
+        type:
+          $ref: '#/components/schemas/VertexType'
+        name:
+          type: string
+          description: Pod Owner name
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        parent:
+          type: string
+          description: Namespace vertex ID; required for all pod owner types except 'namespace' and 'unresolvedip'
+    Graph:
+      type: object
+      description: Communication topology graph
+      properties:
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        vertices:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Vertex'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+    TopologyResponse:
+      type: object
+      description: Owner communication topology graph
+      properties:
+        graph:
+          $ref: '#/components/schemas/Graph'

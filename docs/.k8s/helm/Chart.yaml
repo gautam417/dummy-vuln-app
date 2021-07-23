@@ -1,0 +1,5 @@
+apiVersion: v2
+description: Secure API Docs
+name: api-docs
+type: application
+version: 4.0.1

@@ -1,0 +1,262 @@
+openapi: 3.0.0
+info:
+  title: Sysdig Secure Internal API
+  description: This document contains definitions of the HTTP Rest endpoints for various Sysdig services in development.
+  version: "v1"
+  x-logo:
+    url: "https://docs.sysdig.com/css/image/portal-logo.png"
+servers:
+  - url: https://secure.sysdig.com
+    description: Sysdig Secure API (Internal)
+paths:
+  # Compliance API v2
+  /api/compliance/v2/status:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1status"
+  /api/compliance/v2/scopeOptions:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1scopeOptions"
+  /api/compliance/v2/frameworks:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1frameworks"
+  /api/compliance/v2/frameworks/{frameworkId}:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1frameworks~1{frameworkId}"
+  /api/compliance/v2/tasks:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks"
+  /api/compliance/v2/tasks/{taskId}:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}"
+  /api/compliance/v2/tasks/{taskId}/enable:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}~1enable"
+  /api/compliance/v2/tasks/{taskId}/disable:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}~1disable"
+  /api/compliance/v2/tasks/{taskId}/run:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}~1run"
+  /api/compliance/v2/tasks/{taskId}/report:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}~1report"
+  /api/compliance/v2/tasks/{taskId}/reports/{reportId}:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}~1reports~1{reportId}"
+  /api/compliance/v2/tasks/{taskId}/reports/{reportId}/csv:
+    $ref: "api/compliance/v2/internal/swagger.yaml#/paths/~1api~1compliance~1v2~1tasks~1{taskId}~1reports~1{reportId}~1csv"
+  # Benchmarks API v2
+  /api/benchmarks/v2/runner/ping:
+    $ref: "api/benchmarks/v2/internal/swagger.yaml#/paths/~1api~1benchmarks~1v2~1runner~1ping"
+  /api/benchmarks/v2/runner/result:
+    $ref: "api/benchmarks/v2/internal/swagger.yaml#/paths/~1api~1benchmarks~1v2~1runner~1result"
+  # Cloud Security API v2
+  /api/cloud/v2/accounts:
+    $ref: "api/cloud/v2/internal/swagger.yaml#/paths/~1api~1cloud~1v2~1accounts"
+  /api/cloud/v2/accounts/{accountId}/enable:
+    $ref: "api/cloud/v2/internal/swagger.yaml#/paths/~1api~1cloud~1v2~1accounts~1{accountId}~1enable"
+  /api/cloud/v2/accounts/{accountId}/disable:
+    $ref: "api/cloud/v2/internal/swagger.yaml#/paths/~1api~1cloud~1v2~1accounts~1{accountId}~1disable"
+  /api/cloud/v2/accounts/{accountId}/aliases:
+    $ref: "api/cloud/v2/internal/swagger.yaml#/paths/~1api~1cloud~1v2~1accounts~1{accountId}~1aliases"
+  # API v1 Policy Advisor
+  /api/v1/policyAdvisor/podSecurityPolicies:
+    $ref: "api/v1/policyAdvisor/swagger.yaml#/paths/~1api~1v1~1policyAdvisor~1podSecurityPolicies"
+  /api/v1/policyAdvisor/simulations:
+    $ref: "api/v1/policyAdvisor/swagger.yaml#/paths/~1api~1v1~1policyAdvisor~1simulations"
+  /api/v1/policyAdvisor/simulations/{id}:
+    $ref: "api/v1/policyAdvisor/swagger.yaml#/paths/~1api~1v1~1policyAdvisor~1simulations~1{id}"
+  # API v1 Network Topology
+  /api/v1/networkTopology/clusters:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1clusters"
+  /api/v1/networkTopology/namespaces:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1namespaces"
+  /api/v1/networkTopology/owners:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1owners"
+  /api/v1/networkTopology/ingressSummaries:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1ingressSummaries"
+  /api/v1/networkTopology/egressSummaries:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1egressSummaries"
+  /api/v1/networkTopology/ingressUnresolvedIps:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1ingressUnresolvedIps"
+  /api/v1/networkTopology/egressUnresolvedIps:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1egressUnresolvedIps"
+  /api/v1/networkTopology/ownerTopology:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1ownerTopology"
+  /api/v1/networkTopology/status:
+    $ref: "api/v1/networkTopology/swagger.yaml#/paths/~1api~1v1~1networkTopology~1status"
+  /api/v1/networkSecurity/namespaces/{namespaceName}/simulatedPolicies:
+    $ref: "api/v1/networkSecurity/swagger.yaml#/paths/~1api~1v1~1networkSecurity~1namespaces~1{namespaceName}~1simulatedPolicies"
+  /api/v1/networkSecurity/networkPolicyOverlayOwnerTopology:
+    $ref: "api/v1/networkSecurity/swagger.yaml#/paths/~1api~1v1~1networkSecurity~1networkPolicyOverlayOwnerTopology"
+  /api/v1/networkSecurity/status:
+    $ref: "api/v1/networkSecurity/swagger.yaml#/paths/~1api~1v1~1networkSecurity~1status"
+  /api/v1/networkTopology/workloadLabelKeys:
+    $ref: "api/v1/networkTopology/internal/swagger.yaml#/paths/~1api~1v1~1networkTopology~1workloadLabelKeys"
+  /api/v1/networkTopology/namespaceLabelKeys:
+    $ref: "api/v1/networkTopology/internal/swagger.yaml#/paths/~1api~1v1~1networkTopology~1namespaceLabelKeys"
+  /api/v1/networkTopology/customerConfig:
+    $ref: "api/v1/networkTopology/internal/swagger.yaml#/paths/~1api~1v1~1networkTopology~1customerConfig"
+  # Captures
+  /api/v1/captures/{captureId}/summary:
+    $ref: "api/v1/captures/internal/swagger.yaml#/paths/~1api~1v1~1captures~1{captureId}~1summary"
+  /api/v1/captures/{captureId}/views/{view}:
+    $ref: "api/v1/captures/internal/swagger.yaml#/paths/~1api~1v1~1captures~1{captureId}~1views~1{view}"
+  /api/v1/captures/views:
+    $ref: "api/v1/captures/internal/swagger.yaml#/paths/~1api~1v1~1captures~1views"
+  # Rapid Response v1
+  /api/rapidresponse/v1/status:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1status"
+  /api/rapidresponse/v1/sessions:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1sessions"
+  /api/rapidresponse/v1/sessions/{sessionId}:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1sessions~1{sessionId}"
+  /api/rapidresponse/v1/sessions/{sessionId}/validate:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1sessions~1{sessionId}~1validate"
+  /api/rapidresponse/v1/sessions/{sessionId}/download:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1sessions~1{sessionId}~1download"
+  /api/rapidresponse/v1/hosts:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1hosts"
+  /api/rapidresponse/v1/hosts/{hostId}:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1hosts~1{hostId}"
+  /api/rapidresponse/v1/enabed:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1enabled"
+  /api/rapidresponse/v1/admin/settings/{customerId}:
+    $ref: "api/rapidresponse/v1/internal/swagger.yaml#/paths/~1api~1rapidresponse~1v1~1admin~1settings~1{customerId}"
+  # Reporting API v1
+  /api/reporting/v1/{domain}/schedules/disable:
+    $ref: "api/reporting/v1/internal/swagger.yaml#/paths/~1api~1reporting~1v1~1{domain}~1schedules~1disable"
+  # Scanning API v1
+  /api/scanning/v1/images/{imageDigest}/vulnSummary:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1vulnSummary"
+  /api/scanning/v1/images/{imageDigest}/vulnSummaryDirect:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1vulnSummaryDirect"
+  /api/scanning/v1/images/by_id/{imageId}/vulnSummaryDirect:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1vulnSummaryDirect"
+  /api/scanning/v1/images/{imageDigest}/vuln/{vtype}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1vuln~1{vtype}"
+  /api/scanning/v1/images/{imageDigest}/vulnDirect/{vtype}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1vulnDirect~1{vtype}"
+  /api/scanning/v1/images/by_id/{imageId}/vulnDirect/{vtype}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1vulnDirect~1{vtype}"
+  /api/scanning/v1/images/{imageDigest}/vulnexceptions:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1vulnexceptions"
+  /api/scanning/v1/images/by_id/{imageId}/vulnexceptions:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1vulnexceptions"
+  /api/scanning/v1/images/{imageDigest}/content/{ctype}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1content~1{ctype}"
+  /api/scanning/v1/images/by_id/{imageId}/content/{ctype}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1content~1{ctype}"
+  /api/scanning/v1/images/{imageDigest}/checkSummary:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1checkSummary"
+  /api/scanning/v1/images/by_id/{imageId}/checkSummary:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1checkSummary"
+  /api/scanning/v1/images/{imageDigest}/checkSummary/{policyId}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1checkSummary~1{policyId}"
+  /api/scanning/v1/images/by_id/{imageId}/checkSummary/{policyId}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1checkSummary~1{policyId}"
+  /api/scanning/v1/images/{imageDigest}/policyEvaluation:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1{imageDigest}~1policyEvaluation"
+  /api/scanning/v1/images/by_id/{imageId}/policyEvaluation:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1images~1by_id~1{imageId}~1policyEvaluation"
+  /api/scanning/v1/policies:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1policies"
+  /api/scanning/v1/auditPolicies:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1auditPolicies"
+  /api/scanning/v1/policies/{id}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1policies~1{id}"
+  /api/scanning/v1/registryDisplayNames:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1registryDisplayNames"
+  /api/scanning/v1/whitelists:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1whitelists"
+  /api/scanning/v1/whitelists/{id}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1whitelists~1{id}"
+  /api/scanning/v1/vulnexceptions:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1vulnexceptions"
+  /api/scanning/v1/vulnexceptions/{id}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1vulnexceptions~1{id}"
+  /api/scanning/v1/vulnexceptions/{id}/vulnerabilities:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1vulnexceptions~1{id}~1vulnerabilities"
+  /api/scanning/v1/vulnexceptions/{id}/vulnerabilities/{vulnId}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1vulnexceptions~1{id}~1vulnerabilities~1{vulnId}"
+  /api/scanning/v1/vulnerabilities/{id}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1vulnerabilities~1{id}"
+  /api/scanning/v1/mappings:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1mappings"
+  /api/scanning/v1/whitelistedImages:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1whitelistedImages"
+  /api/scanning/v1/blacklistedImages:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1blacklistedImages"
+  /api/scanning/v1/alerts:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1alerts"
+  /api/scanning/v1/alerts/{id}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1alerts~1{id}"
+  /api/scanning/v1/query/containers:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1query~1containers"
+  /api/scanning/v1/reports:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1reports"
+  /api/scanning/v1/reports/csv:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1reports~1csv"
+  /api/scanning/v1/results:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1results"
+  /api/scanning/v1/retention/policy:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1retention~1policy"
+  /api/scanning/v1/onboarding:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1onboarding"
+  /api/scanning/v1/onboarding/{customerId}:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1onboarding~1{customerId}"
+  /api/scanning/v1/system/feeds:
+    $ref: "api/scanning/v1/internal/swagger.yaml#/paths/~1api~1scanning~1v1~1system~1feeds"
+  # Team Static Scopes for Scan Results
+  /api/scanning/v1/scopes:
+    $ref: "api/scanning/v1/internal/scopes.yaml#/paths/~1api~1scanning~1v1~1scopes"
+  /api/scanning/v1/scopes/{teamId}:
+    $ref: "api/scanning/v1/internal/scopes.yaml#/paths/~1api~1scanning~1v1~1scopes~1{teamId}"
+  /api/scanning/scanresult/v1/status:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1status"
+  /api/scanning/scanresult/v1/results:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1results"
+  /api/scanning/scanresult/v1/results/{resultId}:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1results~1{resultId}"
+  /api/scanning/scanresult/v1/results/{resultId}/vulnPkgs:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1results~1{resultId}~1vulnPkgs"
+  /api/scanning/scanresult/v1/results/{resultId}/vulnPkgs/{vulnPkgId}:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1results~1{resultId}~1vulnPkgs~1{vulnPkgId}"
+  /api/scanning/scanresult/v1/results/{resultId}/packages:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1results~1{resultId}~1packages"
+  /api/scanning/scanresult/v1/results/{resultId}/packages/{packageId}:
+    $ref: "api/scanning/v2/internal/scanresult.yaml#/paths/~1api~1scanning~1scanresult~1v1~1results~1{resultId}~1packages~1{packageId}"
+  # Admission Controller API v1
+  /api/admissionController/v1/clusters:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1clusters"
+  /api/admissionController/v1/clusters/{clusterID}:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1clusters~1{clusterID}"
+  /api/admissionController/v1/clusters/{clusterID}/ping:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1clusters~1{clusterID}~1ping"
+  /api/admissionController/v1/clusters/{clusterID}/configuration:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1clusters~1{clusterID}~1configuration"
+  /api/admissionController/v1/policies:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1policies"
+  /api/admissionController/v1/policies/{policyID}:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1policies~1{policyID}"
+  /api/admissionController/v1/status:
+    $ref: "api/admissioncontroller/v1/internal/swagger.yaml#/paths/~1api~1admissionController~1v1~1status"
+  # Admission Controller API v2
+  /api/admissionController/v2/clusters:
+    $ref: "api/admissioncontroller/v2/internal/swagger.yaml#/paths/~1api~1admissionController~1v2~1clusters"
+  /api/admissionController/v2/clusters/{clusterID}/ping:
+    $ref: "api/admissioncontroller/v2/internal/swagger.yaml#/paths/~1api~1admissionController~1v2~1clusters~1{clusterID}~1ping"
+  /api/admissionController/v2/clusters/{clusterID}/configuration:
+    $ref: "api/admissioncontroller/v2/internal/swagger.yaml#/paths/~1api~1admissionController~1v2~1clusters~1{clusterID}~1configuration"
+  /api/admissionController/v2/policies:
+    $ref: "api/admissioncontroller/v2/internal/swagger.yaml#/paths/~1api~1admissionController~1v2~1policies"
+  # Profiling
+  /api/v1/profiling/profileGroups:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profileGroups"
+  /api/v1/profiling/profileGroups/{profileGroupId}:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profileGroups~1{profileGroupId}"
+  /api/v1/profiling/profileGroups/{profileGroupId}/profiles:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profileGroups~1{profileGroupId}~1profiles"
+  /api/v1/profiling/profiles/{profileId}:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profiles~1{profileId}"
+  /api/v1/profiling/profiles/{profileId}/debugProfile:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profiles~1{profileId}~1debugProfile"
+  /api/v1/profiling/profiles/{profileId}/debugSummary:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profiles~1{profileId}~1debugSummary"
+  /api/v1/profiling/profiles/{profileId}/actions/reset:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profiles~1{profileId}~1actions~1reset"
+  /api/v1/profiling/profiles/{profileId}/actions/remove:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1profiles~1{profileId}~1actions~1remove"
+  /api/v1/profiling/status:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1status"
+  /api/v1/profiling/customerLimits:
+    $ref: "api/v1/profiling/internal/swagger.yaml#/paths/~1api~1v1~1profiling~1customerLimits"

@@ -1,0 +1,667 @@
+openapi: 3.0.0
+info:
+  title: Benchmarks V2 API
+  description: API for Benchmarks V2
+paths:
+  /api/benchmarks/v2/status:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Status"
+      description: >
+        Checks the availability of the Benchmarks V2 API. If Benchmarks V2 is disabled for the customer, and no Cloud
+        Benchmark results are available, this endpoint will return a 403. If Benchmarks V2 is disabled for the customer,
+        but Cloud Benchmark results are available, this endpoint will return 200 with a dummy TaskId in the response
+        body to be used to request the Cloud Benchmark results. Finally, if Benchmark V2 is enabled, this endpoint will
+        return a 200 with no body.
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  dummyCloudTaskId:
+                    type: "string"
+                    example: "123"
+                    description: >
+                      This task Id is not a real task, but is used to request Cloud Benchmark results. If there are no
+                      Cloud Benchmark results available, this endpoint will return a `403 STATUS FORBIDDEN` instead.
+        "403":
+          description: >
+            Status Forbidden: Returned when Benchmarks V2 is disabled, and there are no Cloud Benchmark Results
+            available. FE should hide the Benchmarks V2 UI.
+  /api/benchmarks/v2/scopeOptions:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Scope Options"
+      description: >
+        Returns the list of available Scope Labels and Operators that can be used when creating a Benchmark Task.
+        If an optional 'schema' query param is provided, only Scope Labels relevant to that schema are returned, otherwise
+        all possible Scope Labels are returned.
+      parameters:
+        - name: "schema"
+          in: "query"
+          description: "Fetch the Scope Labels and Operators for this schema. Use a value returned from `/benchmarks/v2/schemas`"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  labels:
+                    type: "array"
+                    description: "A list of supported Scope Labels"
+                    items:
+                      type: string
+                    example: [
+                      "host.hostName",
+                      "host.mac",
+                      "aws.account_id",
+                      "aws.region",
+                      "aws.instance_id",
+                      "kubernetes.cluster.name",
+                      "kubernetes.node.name"
+                    ]
+                  operators:
+                    type: "array"
+                    description: "A list of supported Scope Operators"
+                    items:
+                      type: string
+                    example: [ "in", "equals" ]
+  /api/benchmarks/v2/schemas:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "List Schemas"
+      description: "Returns the list of available Benchmark Schemas."
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: object
+                  properties:
+                    schema:
+                      type: string
+                      description: "The internal Schema identifier"
+                    displayName:
+                      type: string
+                      description: "The Schema display name"
+                    link:
+                      type: string
+                      description: "A link to the official standard"
+                example:
+                  - schema: "kube_bench_cis-1.5"
+                    displayName: "CIS Kubernetes Benchmark 1.5"
+                    link: "https://www.cisecurity.org/benchmark/kubernetes/"
+                  - schema: "kube_bench_cis-1.6"
+                    displayName: "CIS Kubernetes Benchmark 1.6"
+                    link: "https://www.cisecurity.org/benchmark/kubernetes/"
+  /api/benchmarks/v2/schemas/{schemaId}:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Get Schema Controls"
+      description: "Returns the list of Controls in a given Benchmark Schemas grouped by Family."
+      parameters:
+        - name: "schemaId"
+          in: "path"
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: object
+                  properties:
+                    familyId:
+                      type: string
+                      description: "The ID of the family."
+                    title:
+                      type: string
+                      description: "The Title (name) of the family."
+                    controls:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          controlId:
+                            type: string
+                            description: "The ID of the control."
+                          title:
+                            type: string
+                            description: "The Title (name) of the control."
+                          level:
+                            type: string
+                            description: "The CIS Level of the control."
+                example:
+                  - familyId: "1.1"
+                    title: "Master Node Configuration Files"
+                    controls:
+                      - controlId: "1.1.1"
+                        title: "Ensure that the API server pod specification file permissions are set to 644 or more restrictive"
+                        level: "Level 1"
+                      - controlId: "1.1.2"
+                        title: "Ensure that the API server pod specification file ownership is set to root:root"
+                        level: "Level 1"
+                  - familyId: "1.2"
+                    title: "API Server"
+                    controls:
+                      - controlId: "1.2.1"
+                        title: "Ensure that the --anonymous-auth argument is set to false"
+                        level: "Level 1"
+                      - controlId: "1.2.2"
+                        title: "Ensure that the --basic-auth-file argument is not set"
+                        level: "Level 1"
+  /api/benchmarks/v2/tasks:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "List Tasks"
+      description: "Fetches a list of Benchmark Tasks"
+      parameters:
+        - name: "filter"
+          in: "query"
+          description: "Free text filter. Searches the following fields: `name`, `scope`"
+          required: false
+          schema:
+            type: "string"
+        - name: "schema"
+          in: "query"
+          description: "Filter by schema. Valid list returned by `/schemas` endpoint."
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/TaskResponseBody'
+    post:
+      tags: [ "Benchmarks V2" ]
+      summary: "Create Task"
+      description: "Create a new Benchmark Task"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskBody'
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponseBody'
+  /api/benchmarks/v2/tasks/{taskId}:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Get Task"
+      description: "Fetches a Benchmark Task by Id"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponseBody'
+    delete:
+      tags: [ "Benchmarks V2" ]
+      summary: "Delete Task"
+      description: "Delete Benchmark Task with specified task Id. If task has results then the result must be deleted before deleting the task"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+  /api/benchmarks/v2/tasks/{taskId}/enable:
+    put:
+      tags: [ "Benchmarks V2" ]
+      summary: "Enable Task"
+      description: "Enables the Benchmark Task with specified task Id. If the task is already enabled, this is a no-op."
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+  /api/benchmarks/v2/tasks/{taskId}/disable:
+    put:
+      tags: [ "Benchmarks V2" ]
+      summary: "Disable Task"
+      description: "Disables the Benchmark Task with specified task Id. If the task is already disabled, this is a no-op."
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+  /api/benchmarks/v2/tasks/{taskId}/run:
+    post:
+      tags: [ "Benchmarks V2" ]
+      summary: "Run now"
+      description: "Runs the Benchmark Task with the specified task Id"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: "Set to True if the run request was successfully enqueued"
+                  runID:
+                    type: string
+                    description: "The run ID (and ensuing result ID) that was created. Present IFF `success=true`."
+                    example: "674088d3-c9a8-4f04-b47a-5ade04d36faf"
+                  errMsg:
+                    type: string
+                    description: "A description of what went wrong. Present IFF `success=false`."
+                    example: "could not contact redis"
+  /api/benchmarks/v2/tasks/{taskId}/result:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Get most recent Result ID"
+      description: "Fetches most recent result Id, and optionally redirects to the correct `/tasks/{taskId}/results/{resultId}` URL"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+        - name: "redirect"
+          in: "query"
+          required: false
+          schema:
+            type: "boolean"
+      responses:
+        "200":
+          description: "Returned when `redirect` is false or not provided."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lastRunId:
+                    type: string
+                    description: "The most recent run (result) ID"
+                    example: "674088d3-c9a8-4f04-b47a-5ade04d36faf"
+        "302":
+          description: "Returned when `redirect` is true. Redirects the browser to the URL with latest resultId"
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "/api/benchmarks/v2/tasks/1/results/10"
+        "204":
+          description: "Returned when task does not exist, or it has not yet been run"
+  /api/benchmarks/v2/tasks/{taskId}/results/{resultId}:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Get Result"
+      description: "Fetches Benchmark Result"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+        - name: "resultId"
+          description: "Load the result with this Id. Used when the Evaluation Date dropdown is changed. If this parameter is not provided, the most recent result for the given task will be returned."
+          required: true
+          in: "path"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/Result'
+  /api/benchmarks/v2/tasks/{taskId}/results/{resultId}/csv:
+    get:
+      tags: [ "Benchmarks V2" ]
+      summary: "Download CSV"
+      description: "Downloads a CSV of a specific set of Benchmark Results"
+      parameters:
+        - name: "taskId"
+          in: "path"
+          required: true
+          schema:
+            type: number
+        - name: "resultId"
+          description: "Download the result with this Id as a CSV"
+          required: true
+          in: "path"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/csv:
+              schema:
+                type: object
+components:
+  schemas:
+    CreateTaskBody:
+      type: "object"
+      required:
+        - "name"
+        - "schedule"
+        - "schema"
+      properties:
+        name:
+          type: "string"
+          example: "Kube-bench Production"
+        schedule:
+          $ref: '#/components/schemas/CronExpression'
+        schema:
+          $ref: '#/components/schemas/Schema'
+        scope:
+          type: "string"
+          example: >
+            kubernetes.cluster.name="production"
+        enabled:
+          type: "boolean"
+          default: true
+        excludeControlList:
+          type: array
+          description: A list of controlIDs to be excluded
+          items:
+            type: string
+          example:
+            - "1.1.1.a"
+            - "1.2.2"
+    TaskResponseBody:
+      allOf:
+        - $ref: '#/components/schemas/CreateTaskBody'
+        - type: object
+          required:
+            - "id"
+            - "createdOn"
+            - "modifiedOn"
+          properties:
+            id:
+              type: "integer"
+              example: 1
+            nodeCount:
+              type: "integer"
+              example: 1572
+            passPercent:
+              type: "integer"
+              example: 72
+            createdOn:
+              type: "string"
+              format: "date-time"
+            modifiedOn:
+              type: "string"
+              format: "date-time"
+            lastRunOn:
+              type: "string"
+              format: "date-time"
+    Result:
+      required:
+        - "id"
+        - "taskId"
+        - "success"
+        - "startedAt"
+        - "completedAt"
+        - "failureDetails"
+        - "counts"
+        - "countLabel"
+        - "otherResultByAccount"
+        - "families"
+        - "labels"
+      properties:
+        id:
+          type: "number"
+          example: 9
+        taskId:
+          type: "number"
+          example: 2
+        success:
+          type: "boolean"
+          example: true
+        startedAt:
+          type: "string"
+          example: "2020-11-15T01:16:02.469729Z"
+        completedAt:
+          type: "string"
+          example: "2020-11-15T01:16:02.984179Z"
+        failureDetails:
+          type: "string"
+          example: "incomplete"
+        counts:
+          type: "object"
+          properties:
+            resources:
+              $ref: '#/components/schemas/Counts'
+            controls:
+              $ref: '#/components/schemas/Counts'
+        countLabel:
+          type: "string"
+          example: "resources"
+          description: "Controls if counts.resources or counts.controls is displayed in the UI. Must be either 'resources' or 'counts'"
+        otherResultByAccount:
+          $ref: '#/components/schemas/OtherResultByAccount'
+        labels:
+          type: "object"
+          description: "A key value map of labels and their values."
+          properties:
+            aws.accountId:
+              type: "string"
+              example: "411571310278"
+            aws.region:
+              type: "string"
+              example: "us-east-1"
+        families:
+          type: array
+
+    Counts:
+      type: "object"
+      required:
+        - "passPercent"
+        - "pass"
+        - "warn"
+        - "fail"
+      properties:
+        passPercent:
+          type: "number"
+          example: 81
+        pass:
+          type: "number"
+          example: 1847
+        warn:
+          type: "number"
+          example: 0
+        fail:
+          type: "number"
+          example: 416
+    CronExpression:
+      type: string
+      pattern: "^[0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+$"
+      description: "A cron-like expression representing a frequency."
+      example: "0 9 * * 1"
+    Schema:
+      type: "string"
+      description: "Benchmark Schema"
+      enum:
+        - "kube_bench_cis-1.5"
+        - "kube_bench_cis-1.6"
+        - "kube_bench_gke-1.0"
+        - "kube_bench_eks-1.0"
+        - "kube_bench_rh-0.7"
+        - "linux_bench_cis-1.1"
+        - "docker_bench_security_1.0"
+        - "aws_foundations_bench-1.3"
+    OtherResultByAccount:
+      type: object
+      description: "A map with keys corresponding to AWS Account Ids"
+      additionalProperties:
+        type: object
+        description: "A map with keys corresponding to AWS Regions"
+        additionalProperties:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: number
+                example: 45
+              startedOn:
+                type: string
+                example: "2021-02-22T20:10:33.702261Z"
+      example:
+        059797578166:
+          us-east-1:
+            - id: 45
+              startedOn: "2021-02-22T20:10:33.702261Z"
+            - id: 23
+              startedOn: "2021-02-22T20:10:33.702261Z"
+          us-west-2:
+            - id: 78
+              startedOn: "2021-02-22T20:10:33.702261Z"
+        411571310278:
+          us-east-1:
+            - id: 3
+              startedOn: "2021-02-22T20:10:33.702261Z"
+    AwsFamily:
+      type: object
+      properties:
+        familyName:
+          type: string
+          example: "Identity and Access Management"
+        pass:
+          type: number
+          example: 54
+        fail:
+          type: number
+          example: 12
+        warn:
+          type: number
+          example: 0
+        controls:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: "string"
+                example: "cis-5-1"
+              id:
+                type: "string"
+                example: "5.1"
+              title:
+                type: "string"
+                example: "Ensure no Network ACLs allow ingress from 0.0.0.0/0 to remote server administration ports"
+              description:
+                type: "string"
+                example: "The Network Access Control List (NACL) function provide stateless filtering of ingress and egress network traffic to AWS resources. It is recommended that no NACL allows unrestricted ingress access to remote server administration ports, such as SSH to port 22 and RDP to port 3389."
+              rationale:
+                type: "string"
+                example: "Public access to remote server administration ports, such as 22 and 3389, increases resource attack surface and unnecessarily raises the risk of resource compromise."
+              result:
+                type: "string"
+                example: "Fail"
+              level:
+                type: "string"
+                example: "Level 1"
+              familyName:
+                type: "string"
+                example: "Networking"
+              resourceName:
+                type: "string"
+                example: "security-group"
+              resources:
+                type: "array"
+                items:
+                  additionalProperties:
+                    type: string
+              remediation:
+                type: "string"
+                example: "increases resource attack surface and unnecessarily raises the risk of resource compromise."
+              metrics:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    metricName:
+                      type: "string"
+                      example: "ResourceCount"
+                    timestamp:
+                      type: "string"
+                      example: "2020-11-13T02:57:43.748882"
+                    value:
+                      type: "number"
+                      example: 4
+                    unit:
+                      type: "string"
+                      example: "Count"
+              metadata:
+                required:
+                  - "account_id"
+                  - "region"
+                  - "regions"
+                properties:
+                  account_id:
+                    type: "string"
+                    example: "845151661675"
+                  region:
+                    type: "string"
+                    example: "us-east-2"
+                  regions:
+                    type: "array"
+                    items:
+                      type: "string"
+                    example:
+                      - "us-east-2"
+                type: "object"
+              totalResourceCount:
+                type: "number"
+                example: 13
+              totalResourceFailedCount:
+                type: "number"
+                example: 4

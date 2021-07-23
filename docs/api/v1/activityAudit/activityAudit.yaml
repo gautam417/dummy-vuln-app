@@ -1,0 +1,894 @@
+openapi: 3.0.0
+info:
+  title: Activity Audit Secure API
+  description: API for Activity Audit service
+paths:
+  api/v1/activityAudit/summary:
+    get:
+      summary: Retrieve a summary of the audit events
+      description: |
+        Retrieves a summary of the audit events in a time range grouped by a
+        series of metrics.
+      tags:
+        - Activity Audit
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/metric"
+        - $ref: "#/components/parameters/scopeFilter"
+        - $ref: "#/components/parameters/filter"
+        - name: segment
+          description: |
+            Whether or not to segment the results with a distance between points
+            depending on the distance between `from` and `to`.
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          description: The summary of audit events.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metric:
+                    type: object
+                    additionalProperties: true
+                  step:
+                    type: number
+                    format: integer
+                    description: |
+                      If segmented data has been requested, the distance between points
+                      in values expressed in nanoseconds.
+                  values:
+                    type: object
+                    properties:
+                      command:
+                        $ref: "#/components/properties/summarySerie"
+                      connection:
+                        $ref: "#/components/properties/summarySerie"
+                      fileaccess:
+                        $ref: "#/components/properties/summarySerie"
+                      kubernetes:
+                        $ref: "#/components/properties/summarySerie"
+                example:
+                  - metric:
+                      host.hostName: ip-127-0-0-1
+                    values:
+                      command:
+                        - [1569065400000000000,132]
+                        - [1569065460000000000,132]
+                        - [1569065520000000000,132]
+                        - [1569065580000000000,132]
+                    step: 60000000000
+                  - metric:
+                      host.hostName: ip-172-31-63-213
+                    values:
+                      command:
+                        - [1569065400000000000,36]
+                        - [1569065460000000000,36]
+                        - [1569065520000000000,36]
+                        - [1569065580000000000,36]
+                      connection:
+                        - [1569065400000000000,36]
+                        - [1569065460000000000,36]
+                        - [1569065520000000000,36]
+                        - [1569065580000000000,36]
+                      fileaccess:
+                        - [1569065400000000000,36]
+                        - [1569065460000000000,36]
+                        - [1569065520000000000,36]
+                        - [1569065580000000000,36]
+                      kubernetes:
+                        - [1569065400000000000,36]
+                        - [1569065460000000000,36]
+                        - [1569065520000000000,36]
+                        - [1569065580000000000,36]
+                    step: 60000000000
+        400:
+          $ref: "#/components/responses/badRequest"
+  api/v1/activityAudit/events:
+    get:
+      summary: Retrieves a list of audit events
+      description: |
+        Retrieves a list of audit events in a time range filters.
+        The pair `from` and `to` and the `cursor` parameter are mutually
+        exclusive. If you supply a `from` and `to` you must not supply a
+        `cursor` and vice-versa.
+      tags:
+        - Activity Audit
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/scopeFilter"
+        - $ref: "#/components/parameters/filter"
+      responses:
+        200:
+          description: The list of audit events.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    $ref: "#/components/properties/page"
+                  data:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: "#/components/schemas/command"
+                        - $ref: "#/components/schemas/connection"
+                        - $ref: "#/components/schemas/fileaccess"
+                        - $ref: "#/components/schemas/kubernetesAudit"
+        400:
+          $ref: "#/components/responses/badRequest"
+  api/v1/activityAudit/events/{type}/{eventId}:
+    get:
+      summary: Retrieves an audit event given its type and id
+      description: |
+        Retrieves an audit event of a specified type with a given id.
+      tags:
+        - Activity Audit
+      parameters:
+        - $ref: "#/components/parameters/type"
+        - $ref: "#/components/parameters/eventId"
+        - $ref: "#/components/parameters/metrics"
+      responses:
+        200:
+          description: Audit event with the given type and id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/singleResponse"
+        404:
+          $ref: "#/components/responses/notFound"
+  api/v1/activityAudit/events/{type}/{eventId}/trace:
+    get:
+      summary: Retrieves the trace of an audit event
+      description: |
+        Retrieves a trace of all the audit events related to the traceable event
+        in case it is a long running task. The audit events returned are all the
+        commands, connections etc collected during the duration of the traceable
+        event.
+        If the event has not completed yet, the time range considered is up
+        until the current time.
+      tags:
+        - Activity Audit
+      parameters:
+        - $ref: "#/components/parameters/type"
+        - $ref: "#/components/parameters/eventId"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        200:
+          description: |
+            All the events associated with this traceable event.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    $ref: "#/components/properties/page"
+                  data:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: "#/components/schemas/command"
+                        - $ref: "#/components/schemas/connection"
+                        - $ref: "#/components/schemas/fileaccess"
+        400:
+          $ref: "#/components/responses/badRequest"
+        404:
+          $ref: "#/components/responses/notFound"
+        422:
+          $ref: "#/components/responses/unprocessableEntity"
+  api/v1/activityAudit/reports:
+    get:
+      summary: Generate a JSON formatted report based on the given scope and conditions.
+      description: |
+        Generates a JSON formatted report of audit activity in a time range filters.
+        This API is limited to 9999 returned elements.
+      tags:
+        - Activity Audit
+      parameters:
+        - $ref: "#/components/parameters/from"
+        - $ref: "#/components/parameters/to"
+        - $ref: "#/components/parameters/scopeFilter"
+        - $ref: "#/components/parameters/filter"
+        - $ref: "#/components/parameters/metrics"
+      responses:
+        "200":
+          description: The download request was received successfully.
+          content:
+            application/json:
+              examples:
+                response:
+                  value: {
+                    "report": {
+                      "total": 10031,
+                      "returned": 9999,
+                      "from": 1571649600000000000,
+                      "to": 1572820320000000000
+                    },
+                    "data": [
+                      {
+                        "id": "15d3c7a425e72c4a147ad0c5f8859313",
+                        "agentId": 6,
+                        "cmdline": "shred -f /root/.bash_history",
+                        "comm": "shred",
+                        "containerId": "789ca4dd08dd",
+                        "count": 1,
+                        "customerId": 1,
+                        "cwd": "/var/www/html/",
+                        "hostname": "ip-172-20-37-168",
+                        "loginShellDistance": 1,
+                        "loginShellId": 24424,
+                        "pid": 24444,
+                        "ppid": 24424,
+                        "rxTimestamp": 1572820211240410039,
+                        "timestamp": 1572820202706906186,
+                        "tty": 4229188,
+                        "type": "command",
+                        "uid": 0,
+                        "labels": {
+                          "container.id": "789ca4dd08dd",
+                          "host.hostName": "ip-172-20-37-168",
+                          "host.mac": "0a:14:06:43:09:94",
+                          "kubernetes.deployment.name": "woocommerce",
+                          "kubernetes.namespace.name": "store-frontend",
+                          "kubernetes.pod.name": "woocommerce-687795897d-d7wsp"
+                        }
+                      },
+                      {
+                        "id": "15d3c7182b625125741f026b377f4f3e",
+                        "agentId": 4,
+                        "clientIpv4": "100.96.3.11",
+                        "clientPort": 48034,
+                        "containerId": "64d9e3080bc2",
+                        "customerId": 1,
+                        "direction": "out",
+                        "hostname": "ip-172-20-61-35",
+                        "l4protocol": "tcp",
+                        "pid": 20612,
+                        "processName": "kubectl",
+                        "rxTimestamp": 0,
+                        "serverIpv4": "100.64.0.1",
+                        "serverPort": 443,
+                        "timestamp": 1572819601503441189,
+                        "type": "connection",
+                        "labels": {
+                          "container.id": "64d9e3080bc2",
+                          "host.hostName": "ip-172-20-61-35",
+                          "host.mac": "0a:e8:1d:99:d7:c6",
+                          "kubernetes.deployment.name": "cronagent",
+                          "kubernetes.namespace.name": "cronagent",
+                          "kubernetes.pod.name": "cronagent-ffd987cd8-96kj9"
+                        }
+                      },
+                      {
+                        "id": "15e96d5cb529f98e72257034c2cea27a",
+                        "agentId": 11,
+                        "containerId": "e3f387856b8e",
+                        "customerId": 1,
+                        "directory": "",
+                        "filename": "malicious_file",
+                        "hostname": "ip-172-20-32-63",
+                        "permissions": "w",
+                        "pid": 1235,
+                        "processName": "touch",
+                        "rxTimestamp": 0,
+                        "timestamp": 1578913389313915278,
+                        "type": "fileaccess",
+                        "labels": {
+                          "container.id": "64d9e3080bc2",
+                          "host.hostName": "ip-172-20-61-35",
+                          "host.mac": "0a:e8:1d:99:d7:c6",
+                          "kubernetes.deployment.name": "cronagent",
+                          "kubernetes.namespace.name": "cronagent",
+                          "kubernetes.pod.name": "cronagent-ffd987cd8-96kj9"
+                        }
+                      },
+                      {
+                        "id": "15d3c68c821b050864f90af6b3f35f14",
+                        "agentId": 1,
+                        "args": {
+                          "command": "bash",
+                          "container": "woocommerce"
+                        },
+                        "containerId": "789ca4dd08dd",
+                        "customerId": 1,
+                        "hostname": "ip-172-20-37-168",
+                        "name": "woocommerce-687795897d-d7wsp",
+                        "namespace": "store-frontend",
+                        "resource": "pods",
+                        "sourceAddresses": [
+                            "172.20.61.35"
+                        ],
+                        "stages": {
+                          "started": 1572819001692902000,
+                          "completed": 1572819002160092000
+                        },
+                        "subResource": "exec",
+                        "timestamp": 1572819001662965000,
+                        "type": "kubernetes",
+                        "user": {
+                          "username": "system:serviceaccount:cronagent:cronagent",
+                          "groups": [
+                              "system:serviceaccounts",
+                              "system:serviceaccounts:cronagent",
+                              "system:authenticated"
+                          ]
+                        },
+                        "userAgent": "kubectl/v1.15.0 (linux/amd64) kubernetes/e8462b5"
+                      }
+                    ]
+                  }
+          headers:
+            content-disposition:
+              schema:
+                type: string
+              description: string in the format of 'attachment;filename=report-audit-activity-from=datetime-to=datetime.json'
+            content-type:
+              schema:
+                type: string
+              description: application/json
+            X-Truncated-Report:
+              schema:
+                type: string
+                format: boolean
+              description: if true the returned report is truncated to 9999 elements
+        400:
+          $ref: "#/components/responses/badRequest"
+components:
+  schemas:
+    singleResponse:
+      oneOf:
+        - $ref: "#/components/schemas/command"
+        - $ref: "#/components/schemas/connection"
+        - $ref: "#/components/schemas/fileaccess"
+        - $ref: "#/components/schemas/kubernetesAudit"
+    event:
+      type: object
+      required:
+        - id
+        - customerId
+        - agentId
+        - timestamp
+        - rxTimestamp
+        - type
+      properties:
+        id:
+          $ref: "#/components/properties/id"
+        customerId:
+          $ref: "#/components/properties/customerId"
+        agentId:
+          $ref: "#/components/properties/agentId"
+        timestamp:
+          $ref: "#/components/properties/timestamp"
+        rxTimestamp:
+          $ref: "#/components/properties/rxTimestamp"
+        type:
+          type: string
+          enum:
+            - command
+            - connection
+            - fileaccess
+            - kubernetes
+        metrics:
+          $ref: "#/components/properties/metrics"
+    command:
+      description: Represents a command execution.
+      allOf:
+        - $ref: "#/components/schemas/event"
+        - type: object
+          required:
+            - count
+            - cmdline
+            - comm
+            - pcomm
+            - pid
+            - ppid
+            - uid
+            - loginShellId
+            - loginShellDistance
+            - tty
+            - traceable
+          properties:
+            type:
+              enum:
+                - command
+            containerId:
+              $ref: "#/components/properties/containerId"
+            count:
+              type: number
+              format: integer
+              description: |
+                Count of commands. `command` is ever greater than `1` only when
+                commands are grouped together.
+              example: 1
+              default: 1
+            cmdline:
+              type: string
+              description: Full command line
+              example: "pg_isready --host 10.32.0.8"
+            comm:
+              type: string
+              description: The name of the command.
+              example: pg_isready
+            pcomm:
+              type: string
+              description: The name of the parent command.
+              example: sshd
+            pid:
+              type: number
+              format: integer
+              description: Process ID.
+              example: 31135
+            ppid:
+              type: number
+              format: integer
+              description: Parent process ID.
+              example: 31132
+            uid:
+              type: number
+              format: integer
+              description: User ID
+              example: 0
+            cwd:
+              type: string
+              description: Command working directory.
+              example: /
+            hostname:
+              $ref: "#/components/properties/hostname"
+            loginShellId:
+              type: number
+              format: integer
+              description: Process id of the shell.
+            loginShellDistance:
+              type: number
+              format: integer
+              description: Level of nesting from the parent shell.
+            tty:
+              type: number
+              format: integer
+              description: TTY number.
+            traceable:
+              type: boolean
+              default: false
+              description: If command can be traced.
+    connection:
+      allOf:
+        - $ref: "#/components/schemas/event"
+        - type: object
+          required:
+            - pid
+            - type
+          properties:
+            type:
+              enum:
+                - connection
+            containerId:
+              $ref: "#/components/properties/containerId"
+            pid:
+              type: number
+              format: integer
+              description: Id of the process owning the connection.
+              example: 123
+            processName:
+              type: number
+              format: string
+              description: Name of the process owning the connection.
+              example: curl
+            clientIPv4:
+              type: string
+              description: The IPv4 dotted notation of the client address.
+              example: "127.0.0.1"
+            clientPort:
+              type: number
+              format: integer
+              description: The client port.
+              example: 31234
+            serverIPv4:
+              type: string
+              description: The IPv4 dotted notation of the server address.
+              example: "127.0.0.1"
+            serverPort:
+              type: number
+              format: integer
+              description: The server port.
+              example: 80
+            tty:
+              type: number
+              format: integer
+              description: TTY number.
+            direction:
+              type: string
+              description: The direction of the connection.
+              enum:
+                - INCOMING
+                - OUTGOING
+            l4protocol:
+              type: string
+              description: The layer 4 protocol.
+              example: tcp
+            errorCode:
+              # TODO(mr): figure out whether or not return a more meaningful info
+              # or just the error code number
+              type: number
+              description: The error code.
+              example: 115
+            hostname:
+              $ref: "#/components/properties/hostname"
+            status:
+              type: string
+              description: The status of the connection.
+              enum:
+                - ESTABLISHED
+                - FAILED
+              example: ESTABLISHED
+    fileaccess:
+      allOf:
+        - $ref: "#/components/schemas/event"
+        - type: object
+          required:
+            - pid
+            - type
+          properties:
+            type:
+              enum:
+                - fileaccess
+            containerId:
+              $ref: "#/components/properties/containerId"
+            pid:
+              type: number
+              format: integer
+              description: Id of the process owning the connection.
+              example: 123
+            processName:
+              type: number
+              format: string
+              description: Name of the process owning the connection.
+              example: curl
+            directory:
+              type: string
+              description: The Directory for the file access.
+              example: "/home/sysdig/"
+            filename:
+              type: string
+              description: The Filename involved in file access.
+              example: "malicious_file.txt"
+            permissions:
+              type: string
+              description: The Permissions of the file access.
+              example: "rw"
+            hostname:
+              $ref: "#/components/properties/hostname"
+            tty:
+              type: number
+              format: integer
+              description: TTY number.
+    kubernetesAudit:
+      allOf:
+        - $ref: "#/components/schemas/event"
+        - type: object
+          required:
+            - resource
+            - stages
+            - sourceAddresses
+            - user
+            - userAgent
+            - type
+          properties:
+            type:
+              enum:
+                - kubernetes
+            hostname:
+              $ref: "#/components/properties/hostname"
+            containerId:
+              $ref: "#/components/properties/containerId"
+            resource:
+              type: string
+              description: The Kubernetes resource.
+              example: pods
+            subResource:
+              type: string
+              description: The Kubernetes subresource.
+              example: exec
+            namespace:
+              type: string
+              description: The Kubernetes namespace.
+              example: sysdigcloud
+            name:
+              type: string
+              description: The name of the resource.
+              example: sysdigcloud-redis-75675f5897-7ci7o
+            stages:
+              type: object
+              properties:
+                started:
+                  type: number
+                  format: long
+                  description: |
+                    The timestamp of the started stage, expressed in nanoseconds
+                  example: 1546300800000000000
+                completed:
+                  type: number
+                  format: long
+                  description: |
+                    The timestamp of the completed stage, expressed in
+                    nanoseconds
+                  example: 1546300800000000000
+            sourceAddresses:
+              type: array
+              example:
+                - "127.0.0.1"
+                - "192.168.0.1"
+            user:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: The username of the
+                  example: kubernetes-admin
+                groups:
+                  type: array
+                  example:
+                    - system:masters
+                    - system:authenticated
+            userAgent:
+              type: string
+              description: The user agent of the client
+              example: kubectl/v1.13.5 (linux/amd64) kubernetes/2166946
+            args:
+              type: object
+              description: |
+                Arguments specific for the different types of Kubernetes audit
+                events. In case of `pods:exec`, `args` will contain the fields
+                `command` and `container` representing the command called and
+                the name of the container in the pod where the command was
+                executed respectively.
+              example:
+                command: bash
+                container: redis
+  properties:
+    page:
+      type: object
+      properties:
+        total:
+          type: number
+          format: integer
+          description: |
+            The number of audit events returned. This number is always less or
+            equal the limit specified in the request.
+          example: 10
+        prev:
+          type: string
+          description: |
+            The continuation token used to fetch a set of audit events before
+            the current one.
+          example: LTltNGUybXIwdWkzZThhMjE1bjRn
+        next:
+          type: string
+          description: |
+            The continuation token used to fetch a set of audit events after the
+            current one.
+          example: KzltNGUybXIwdWkzZThhMjE1bjRn
+    id:
+      type: string
+      description: The audit event id.
+      example: 15cbf54e34df95404caad1c988cf7c42
+    customerId:
+      type: number
+      format: integer
+      description: The customer id.
+      example: 1
+    agentId:
+      type: number
+      format: integer
+      description: The agent id.
+      example: 1
+    containerId:
+      type: string
+      description: |
+        The container id. `containerId` is present only if the audit event was
+        collected in a container context.
+      example: "f8d4f71ab80b"
+    hostname:
+      type: string
+      description: The Kubernetes hostname.
+      example: ip-127-0-0-1
+    timestamp:
+      type: number
+      format: long
+      description: Timestamp the audit event occured, expressed in nanoseconds.
+      example: 1546300800000000000
+    rxTimestamp:
+      type: number
+      format: long
+      description: Timestamp the command was received, expressed in nanoseconds.
+      example: 1546300800000000000
+    metrics:
+      type: array
+      description: List of metrics associated to the audit event.
+      example:
+        - "ip-127-0-0-1"
+        - "f8d4f71ab80b"
+    summarySerie:
+      type: array
+      description: |
+        Series of tuples containing timestamp and values for a specific point in
+        time for the metric. Only present if there are elements matching the metric.
+      items:
+        type: array
+        items:
+          type: number
+          description: |
+            The first element is always a timestamp expressed in
+            nanoseconds and the second one the metric value.
+          minItems: 2
+          maxItems: 2
+  parameters:
+    eventId:
+      name: eventId
+      description: The audit event id.
+      required: true
+      in: path
+      schema:
+        type: string
+        example: 15cbf54e34df95404caad1c988cf7c42
+    type:
+      name: type
+      description: The event type.
+      required: true
+      in: path
+      schema:
+        type: string
+        example: command
+        enum:
+          - commands
+          - connections
+          - fileaccesses
+          - kubernetes
+    from:
+      name: from
+      description: From, expressed in nanoseconds.
+      in: query
+      schema:
+        type: number
+        format: long
+        example: 1546300800000000000
+    to:
+      name: to
+      description: To, expressed in nanoseconds.
+      in: query
+      schema:
+        type: number
+        format: long
+        example: 1546300800000000000
+    cursor:
+      name: cursor
+      description: >
+        Cursor is a string used to retrieve data given a specific context. The
+        context can either be audit events before a certain event, after it or
+        its surrounding.
+      in: query
+      schema:
+        type: string
+        example: LTltNGUybXIwdWkzZThhMjE1bjRn
+    limit:
+      name: limit
+      description: Limit the number of results to return.
+      in: query
+      schema:
+        type: number
+        format: integer
+        example: 100
+        minimum: 1
+        maximum: 9999
+        default: 100
+    metrics:
+      name: metrics
+      description: |
+        JSON list of metrics used to enrich results.
+        If no `metrics` is passed the audit events returned will not have a
+        `metrics` field populated. The metrics attributes are directly fetched
+        from the metadata service, so please refer to it for the full list of
+        supported metrics.
+      in: query
+      schema:
+        type: string
+        example: '["host.hostName","container.id"]'
+    metric:
+      name: metric
+      description: |
+        Metric used for aggregating results. The metric values are directly
+        fetched from the metadata service, so please refer to it for the full
+        list of supported metrics.
+      in: query
+      schema:
+        type: string
+        example: host.hostName
+    filter:
+      name: filter
+      description: |
+        Query language expression for filtering results. It is a subset of the
+        full metrics query language used in monitoring.
+
+        Operators:
+        - `and`, `or` and `not` logical operators (i.e. `pid = 1 and ppid = 2`)
+        - `=`, `!=`, `>`, `>=`, `<` and `<=` comparison operators (i.e. `pid = 1`)
+        - `in` to check inclusion in a list of values (i.e. `pid in (1, 2)` or
+        `clientipv4 in ("127.0.0.1", "192.168.0.1")`)
+
+        This query language does not support the full set of metrics supported
+        in the monitor query language, but instead supports a set of fields
+        proper to each audit events type.
+
+        These are the supported fields:
+        - `id`
+        - `type`
+        - `agentid`
+        - `auditid`
+        - `clientipv4`
+        - `clientport`
+        - `cmdline`
+        - `comm`
+        - `command`
+        - `containerid`
+        - `count`
+        - `customerid`
+        - `cwd`
+        - `direction`
+        - `errorcode`
+        - `l4protocol`
+        - `loginshell.distance`
+        - `loginshell.id`
+        - `name`
+        - `namespace`
+        - `pid`
+        - `ppid`
+        - `processname`
+        - `resource`
+        - `rxtimestamp`
+        - `serveripv4`
+        - `serverport`
+        - `sourceaddresses`
+        - `stages`
+        - `status`
+        - `subresource`
+        - `timestamp`
+        - `uid`
+        - `user`
+        - `useragent`
+      in: query
+      schema:
+        type: string
+        example: pid=1
+    scopeFilter:
+      name: scopeFilter
+      description: >
+        Metrics query language expression for filtering results based on the
+        scope. This filter is forwarded to the metadata service to scope down
+        the number of results based on metrics attributes.
+      in: query
+      schema:
+        type: string
+        example: 'host.hostName="ip-127-0-0-1"'
+  responses:
+    badRequest:
+      description: The request is invalid.
+    notFound:
+      description: The event could not be found.
+    unprocessableEntity:
+      description: The audit event requested does not support tracing.
+
+  tags:
+    audit:
+      name: Activity Audit
+      description: >
+        The audit API returns data related to audit events both in raw and in
+        aggregated form.

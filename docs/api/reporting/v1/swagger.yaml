@@ -1,0 +1,564 @@
+openapi: 3.0.0
+
+info:
+  title: Reporting Secure API
+  description: API for Reporting service in Sysdig Secure
+  version: "v1"
+
+paths:
+  /api/reporting/v1/{domain}/{reportType}/config:
+    parameters:
+      - $ref: "#/components/parameters/domain"
+      - $ref: "#/components/parameters/reportType"
+    get:
+      summary: Get all the options available to define a report configuration
+      tags:
+        - Reporting
+      responses:
+        "200":
+          description: Options available to define a report configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  availableColumns:
+                    type: array
+                    readOnly: true
+                    description: >-
+                      The available columns that can be chosen and included in a generated report
+                    items:
+                      type: object
+                      properties:
+                        dataKey:
+                          type: string
+                          description: Column identifier
+                          example: severity
+                        label:
+                          type: string
+                          nullable: true
+                          description: Human-readable name for the column
+                          example: Severity
+                        isRequired:
+                          type: boolean
+                          description: Whether the columns must be included when specifying a report configuration
+                          example: true
+                  availableFilters:
+                    type: array
+                    readOnly: true
+                    description: >-
+                      The available conditions that can be set to filter the results in a generated report
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - string
+                            - number
+                            - boolean
+                            - stringarray
+                          description: Data type for the filter values
+                          example: string
+                        name:
+                          type: string
+                          description: Filter identifier
+                          example: severity
+                        label:
+                          type: string
+                          nullable: true
+                          description: Human-readable label for the filter
+                          example: Severity
+                        labelSuffix:
+                          type: string
+                          nullable: true
+                          description: Human-readable suffix for the filter value
+                          example: sev.
+                        allowedValues:
+                          type: array
+                          nullable: true
+                          items:
+                            type: object
+                            properties:
+                              value:
+                                oneOf:
+                                  - type: string
+                                  - type: number
+                                  - type: boolean
+                                  - type: array
+                                    items:
+                                      type: string
+                                description: One of the allowed value for the filter
+                                example: high
+                              label:
+                                type: string
+                                description: Human-readable label for the filter value
+                                example: High
+                          description: Full list of the allowed values for the filter
+                        min:
+                          type: number
+                          nullable: true
+                          description: Minimum allowed value for filters with type number
+                          example: 0
+                        max:
+                          type: number
+                          nullable: true
+                          description: Maximum allowed value for filters with type number
+                          example: 10
+                        comparisons:
+                          type: array
+                          nullable: true
+                          items:
+                            type: string
+                          description: Optional list of comparison operators which can be used when applying the filter
+                          example:
+                            - ">="
+                            - "<="
+  /api/reporting/v1/{domain}/{reportType}/preview:
+    parameters:
+      - $ref: "#/components/parameters/domain"
+      - $ref: "#/components/parameters/reportType"
+    post:
+      summary: Get a result preview of a report with the given configuration
+      tags:
+        - Reporting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportConfig"
+      responses:
+        "200":
+          description: The result preview for the requested report configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportContent"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingError"
+              example: "Invalid report configuration"
+  /api/reporting/v1/{domain}/schedules:
+    parameters:
+      - $ref: "#/components/parameters/domain"
+    get:
+      summary: List all the saved schedules for report generation
+      tags:
+        - Reporting
+      responses:
+        "200":
+          description: The list of all saved schedules for report generation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSchedule"
+    post:
+      summary: Create a new schedule for report generation
+      tags:
+        - Reporting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportSchedule"
+      responses:
+        "200":
+          description: The created schedule for report generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSchedule"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingError"
+              example: "Invalid report configuration"
+  /api/reporting/v1/{domain}/schedules/{scheduleId}:
+    parameters:
+      - $ref: "#/components/parameters/domain"
+      - $ref: "#/components/parameters/scheduleId"
+    get:
+      summary: Get the configuration of the requested schedule for report generation
+      tags:
+        - Reporting
+      responses:
+        "200":
+          description: Configuration for the requested schedule for report generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSchedule"
+        "404":
+          description: Requested report generation schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingError"
+              example: "Report generation schedule not found"
+    put:
+      summary: Edit the configuration of the requested schedule for report generation
+      tags:
+        - Reporting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportSchedule"
+      responses:
+        "200":
+          description: Updated configuration for the requested schedule for report generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSchedule"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingError"
+              example: "Invalid report configuration"
+        "404":
+          description: Requested report generation schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingError"
+              example: "Report generation schedule not found"
+    delete:
+      summary: Remove the requested schedule for report generation
+      tags:
+        - Reporting
+      responses:
+        "204":
+          description: Schedule for report generation removed
+  /api/reporting/v1/{domain}/reports/{fileId}:
+    parameters:
+      - $ref: "#/components/parameters/domain"
+      - $ref: "#/components/parameters/fileId"
+    get:
+      summary: Download a previously generated report
+      tags:
+        - Reporting
+      responses:
+        "200":
+          description: Report content
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportContent"
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "307":
+          description: Requested report available for download at another location
+          headers:
+            Location:
+              schema:
+                type: string
+        "404":
+          description: Requested report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingError"
+              example: "Report not found"
+
+components:
+  parameters:
+    domain:
+      in: path
+      name: domain
+      schema:
+        type: string
+        enum:
+          - scanning
+      required: true
+      description: >-
+        The data domain of the report. The only supported value is `scanning`
+      example: scanning
+    reportType:
+      in: path
+      name: reportType
+      schema:
+        type: string
+        enum:
+          - vulnerabilities
+          - policies
+      required: true
+      description: >-
+        The kind of report to generate
+      example: vulnerabilities
+    scheduleId:
+      in: path
+      name: scheduleId
+      schema:
+        type: string
+      required: true
+      description: >-
+        The ID of the schedule for report generation
+      example: schedule-1hDkklCWc5UtuFhwCaZkbFNY5ZV
+    fileId:
+      in: path
+      name: fileId
+      schema:
+        type: string
+      required: true
+      description: >-
+        The ID of the generated report ready for download
+      example: 1ueqXHvmzvtwJV2lFr8z8wdydu
+
+  schemas:
+    ReportSchedule:
+      type: object
+      description: >-
+        Schedule and configuration definition for a report generation
+      required:
+        - id
+        - name
+        - configuration
+        - schedule
+        - format
+        - enabled
+        - notificationChannelIds
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: >-
+            Unique opaque identifier of the report generation schedule.
+          example: schedule-1hDkklCWc5UtuFhwCaZkbFNY5ZV
+        name:
+          type: string
+          description: >-
+            The title for the generated reports.
+          example: Weekly vulnerability report
+        description:
+          type: string
+          description: >-
+            A human-readable description for the report content.
+          example: |
+            Weekly report for package vulnerabilities fount in the Production environment.
+            Required for compliance needs.
+        reportType:
+          type: string
+          description: >-
+            The kind of report to generate
+          enum:
+            - vulnerabilities
+            - policies
+          example: vulnerabilities
+        configuration:
+          $ref: "#/components/schemas/ReportConfig"
+        schedule:
+          type: string
+          pattern: "^[0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+ [0-9*/,-]+$"
+          description: >-
+            A cron-like expression representing the generation frequency of the reports.
+          example: "0 9 * * 1"
+        enabled:
+          type: boolean
+          description: >-
+            Whether the report generation is active or not
+          example: true
+        notificationChannels:
+          type: array
+          description: >-
+            Notification channels where to notify the generation of a new report along with the chosen report format
+          items:
+            type: object
+            properties:
+              notificationChannelId:
+                type: integer
+                description: >-
+                  ID of notification channel where the generation of new reports is notified
+                example: 12456
+              format:
+                type: string
+                enum:
+                  - csv
+                  - json
+                  - pdf
+                description: >-
+                  Format of the generated report
+                example: csv
+        status:
+          type: object
+          readOnly: true
+          description: >-
+            Schedule, start and completion timestamps for the latest report
+          properties:
+            lastScheduledAt:
+              type: integer
+              readOnly: true
+              nullable: true
+              description: >-
+                The timestamp when a new generation of the scheduled report was last queued
+              example: 1602674500
+            lastStartedAt:
+              type: integer
+              readOnly: true
+              nullable: true
+              description: >-
+                The timestamp when the generation of the scheduled report started the last time
+              example: 1602674521
+            lastCompletedAt:
+              type: integer
+              readOnly: true
+              nullable: true
+              description: >-
+                The timestamp when the generation of the scheduled report completed the last time
+              example: 1602674554
+        createdAt:
+          type: integer
+          readOnly: true
+          description: >-
+            The timestamp when the schedule was defined the first time
+          example: 1602672997
+        updatedAt:
+          type: integer
+          readOnly: true
+          description: >-
+            The timestamp when the schedule was last updated
+          example: 1602673124
+    ReportConfig:
+      type: object
+      description: >-
+        Configuration of a report generation
+      required:
+        - scope
+        - columns
+        - sorting
+      properties:
+        scope:
+          type: object
+          description: >-
+            Filter the results based on the given scope
+          properties:
+            imageId:
+              type: string
+              nullable: true
+              description: restrict the report generation on the given image ID
+              example: sha256:b6fa739cedf5ea12a620a439402b6004d057da800f91c7524b5086a5e4749c9f
+            runtimeEnabled:
+              type: boolean
+              description: whether the report should be filtered using a runtime scope
+              example: true
+            runtimeScope:
+              type: string
+              nullable: true
+              description: An AND-composed string of predicates that restrict the scope of the generated report
+            registry:
+              type: string
+              nullable: true
+              description: Docker registry
+              example: docker.io
+            repository:
+              type: string
+              nullable: true
+              description: Docker image repository
+              example: debian
+            tag:
+              type: string
+              nullable: true
+              description: Docker image tag
+              example: stable
+        queryFilters:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              value:
+                oneOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                  - type: array
+                    items:
+                      type: string
+                description: Filter value
+              comparision:
+                type: string
+                nullable: true
+                enum:
+                  - "<"
+                  - "<="
+                  - "="
+                  - ">="
+                  - ">"
+                description: Comparison operator to be applied with the chosen filter value
+          description: >-
+            Set of additional filter conditions on the generated reports.
+            Filters are defined as map with filter names as key.
+          example:
+            vulnType:
+              value: os
+            fixAvailable:
+              value: false
+            severity:
+              value: high
+              comparison: ">="
+        columns:
+          type: array
+          items:
+            type: string
+          description: >-
+            The columns to be included in the generated report, in the order desired
+          example:
+            - vulnId
+            - severity
+            - package
+        sorting:
+          type: array
+          description: Sorting criteria
+          items:
+            type: object
+            required:
+              - column
+              - sortOrder
+            properties:
+              column:
+                type: string
+                description: >-
+                  The column identifier chosen for sorting
+                example: vulnId
+              sortOrder:
+                type: string
+                enum:
+                  - asc
+                  - desc
+                description: >-
+                  The sorting order (ascending or descending) for the given column
+                example: asc
+    ReportContent:
+      type: array
+      items:
+        type: object
+        additionalProperties:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          nullable: true
+          description: >-
+            A record of the requested report. Record keys are the column identifiers.
+        example:
+          vulnId: CVE-2017-14062
+          severity: High
+          package: log4j
+    ReportingError:
+      type: string

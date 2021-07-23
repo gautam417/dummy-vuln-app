@@ -1,0 +1,85 @@
+openapi: 3.0.0
+info:
+  title: Policy API
+  description: API for Policies
+  version: v3
+  
+paths:
+  /api/policies/v3/policyActions:
+    get:
+      summary: Retrieve the list of supported policy actions for a provided policy type
+      description: Retrieve the list of supported policy actions for a provided policy type
+      tags:
+        - Policies
+      parameters:
+        - name: policyType
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/PolicyType"
+      responses:
+        200:
+          description: The array representing the policy actions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyActionResponseWrapper"
+  /api/policies/v3/falcoEngineInfo:
+    get:
+      summary: Get info about the falco engine used to validate rules content
+      description: |
+        This endpoint returns the value of the "engine_info" property that is returned by running "falco --support"
+      tags:
+        - Falco Rules Files
+      responses:
+        200:
+          description: Information about the falco engine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FalcoEngineInfo"
+                
+components:
+  schemas:
+    PolicyType:
+      type: string
+      description: >
+        A non overlapping subset of policies that share common characteristics
+         * `list_matching` - Refers to policies that implement list matching rules which are evaluated against system calls
+         * `workload` - Refers to policies that implement rules in which the source field is set to `falco` and are evaluated against system calls
+         * `k8s_audit` - Refers to policies that implement rules in which the source field is set to `k8s_audit` and are evaluated against k8s audit logs
+         * `aws_cloudtrail` - Refers to policies that implement rules in which the source field is set to `aws_cloudtrail` and are evaluated against cloudtrail logs
+         * `gcp_auditlog` - Refers to policies that implement rules in which the source field is set to `gcp_auditlog` and are evaluated against gcp audit logs
+      enum:
+        - list_matching
+        - workload
+        - k8s_audit
+        - aws_cloudtrail
+        - gcp_auditlog
+    PolicyAction:
+      type: string
+      description: Functional behavior that can be enabled within a policy and should be performed if the condition of a policy is met. Certain actions may only make sense for policies of a particular type.
+      enum:
+        - capture
+        - pause
+        - stop
+        - kill
+    PolicyActionResponseWrapper:
+      type: object
+      properties:
+        policyActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyAction"
+    FalcoEngineInfo:
+      type: object
+      required: ["engineInfo"]
+      properties:
+        engineInfo:
+          type: object
+          required: ["engineVersion"]
+          properties:
+            engineVersion:
+              type: integer
+              example: 8
+              description: The current falco engine version

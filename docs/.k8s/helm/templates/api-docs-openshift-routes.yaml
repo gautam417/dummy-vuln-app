@@ -1,0 +1,27 @@
+{{- if and (contains "secure" .Values.apps) (.Values.sysdig.secure.apiDocs.enabled) }}
+{{- if and (ne .Values.sysdig.ingressNetworking "external") (eq .Values.deployment "openshift") }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations: {}
+  labels:
+    app: sysdigcloud
+    role: api-docs
+  name: sysdigcloud-api-docs
+  namespace: {{ .Values.namespace }}
+spec:
+  host: {{ .Values.sysdig.dnsName }}
+  port:
+    targetPort: 80
+  path: "/api/docs/secure"
+  tls:
+    certificate: |
+{{ .Files.Get "certs/server.crt" | indent 6 }}
+    key: |
+{{ .Files.Get "certs/server.key" | indent 6 }}
+    termination: edge
+  to:
+    name: sysdigcloud-api-docs
+{{- end }}
+{{- end }}

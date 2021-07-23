@@ -1,0 +1,4632 @@
+openapi: 3.0.0
+info:
+  title: Scanning Secure API
+  description: API for Sysdig Secure Scanning service
+  version: "v1"
+paths:
+  /api/scanning/v1/images/{imageDigest}/vulnSummary:
+    get:
+      summary: >-
+        Retrieve a map of vulnType -> (map of severity -> count) of the
+        vulnerabilities of an image
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: A map of vulnType -> (map of severity -> count)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnSummaryMap"
+  /api/scanning/v1/images/{imageDigest}/vulnSummaryDirect:
+    get:
+      summary: >-
+        Vulnerabilities of an image. [Digest]
+        Data is fetched directly from anchore database.
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageDigest"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: A map of vulnType -> (map of severity -> count)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnSummaryMap"
+  /api/scanning/v1/images/by_id/{imageId}/vulnSummaryDirect:
+    get:
+      summary: >-
+        Vulnerabilities of an image. [ImageID]
+        Data is fetched directly from anchore database.
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: A map of vulnType -> (map of severity -> count)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnSummaryMap"
+  /api/scanning/v1/images/by_id/{imageId}/vuln/{vtype}:
+    get:
+      summary: Retrieve vulnerabilities data of an image
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: vtype
+          in: path
+          description: The type of vulnerabilities to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - non-os
+        - name: filter
+          in: query
+          description: >-
+            If specified, only vulnerabilities that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - vuln
+              - fix
+              - severity
+              - package
+              - url
+              - feed
+              - feed_group
+              - package_name
+              - package_version
+              - package_type
+              - package_cpe
+              - package_pat
+        - name: filters
+          in: query
+          description: >-
+            A comma-separated list of severities. If specified, only
+            vulnerabilities of these severities will be retrieved
+          required: false
+          schema:
+            type: string
+            enum:
+              - Unknown
+              - Negligible
+              - Low
+              - Medium
+              - High
+              - Critical
+        - name: hasFix
+          in: query
+          description: >-
+            If specified, only vulnerabilities with an available fix will be
+            retrieved
+          required: false
+          schema:
+            type: boolean
+        - name: cmpImageId
+          in: query
+          description: >-
+            If specified, the vulnerabilities in the response will contain
+            a comparison status relative to the image specified by this
+            parameter. A total count of all comparison statuses will also be
+            returned.
+          required: false
+          schema:
+            type: string
+        - name: cmpFilter
+          in: query
+          description: >-
+            If specified, only vulnerabilities matching this comparison
+            status will be returned. If not specified, all vulnerabilities
+            will be returned.
+          required: false
+          schema:
+            type: string
+            enum:
+              - New
+              - Fixed
+              - Shared
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the vulnerabilities list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+        - name: includeVulnExceptions
+          in: query
+          description: >-
+            If specified, returns also the set of vulnerability exception lists where the vulnerability is
+            contained and when it will expire.
+          required: false
+          schema:
+            type: boolean
+        - name: imageTag
+          in: query
+          description: |
+            The image's tag.
+            Required when "includeVulnExceptions" is set to true.
+          required: false
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved vulnerabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnerabilities"
+  /api/scanning/v1/images/{imageDigest}/vuln/{vtype}:
+    get:
+      summary: Retrieve vulnerabilities data of an image
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageDigest"
+        - name: vtype
+          in: path
+          description: The type of vulnerabilities to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - non-os
+        - name: filter
+          in: query
+          description: >-
+            If specified, only vulnerabilities that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - vuln
+              - fix
+              - severity
+              - package
+              - url
+              - feed
+              - feed_group
+              - package_name
+              - package_version
+              - package_type
+              - package_cpe
+              - package_pat
+        - name: filters
+          in: query
+          description: >-
+            A comma-separated list of severities. If specified, only
+            vulnerabilities of these severities will be retrieved
+          required: false
+          schema:
+            type: string
+            enum:
+              - Unknown
+              - Negligible
+              - Low
+              - Medium
+              - High
+              - Critical
+        - name: hasFix
+          in: query
+          description: >-
+            If specified, only vulnerabilities with an available fix will be
+            retrieved
+          required: false
+          schema:
+            type: boolean
+        - name: cmpDigest
+          in: query
+          description: >-
+            If specified, the vulnerabilities in the response will contain
+            a comparison status relative to the image specified by this
+            parameter. A total count of all comparison statuses will also be
+            returned.
+          required: false
+          schema:
+            type: string
+        - name: cmpFilter
+          in: query
+          description: >-
+            If specified, only vulnerabilities matching this comparison
+            status will be returned. If not specified, all vulnerabilities
+            will be returned.
+          required: false
+          schema:
+            type: string
+            enum:
+              - New
+              - Fixed
+              - Shared
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the vulnerabilities list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+        - name: includeVulnExceptions
+          in: query
+          description: >-
+            If specified, returns also the set of vulnerability exception lists where the vulnerability is
+            contained and when it will expire.
+          required: false
+          schema:
+            type: boolean
+        - name: imageTag
+          in: query
+          description: |
+            The image's tag.
+            Required when "includeVulnExceptions" is set to true.
+          required: false
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved vulnerabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnerabilities"
+  /api/scanning/v1/images/{imageDigest}/vulnDirect/{vtype}:
+    get:
+      summary: |
+        Retrieve vulnerabilities data of an image [Digest][Direct]
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            type: string
+        - name: vtype
+          in: path
+          description: The type of vulnerabilities to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - non-os
+              - all
+        - name: filter
+          in: query
+          description: >-
+            If specified, only vulnerabilities that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - vuln
+              - fix
+              - severity
+              - package
+              - url
+              - feed
+              - feed_group
+              - package_name
+              - package_version
+              - package_type
+              - package_cpe
+              - package_pat
+        - name: filters
+          in: query
+          description: >-
+            A comma-separated list of severities. If specified, only
+            vulnerabilities of these severities will be retrieved
+          required: false
+          schema:
+            type: string
+            enum:
+              - Unknown
+              - Negligible
+              - Low
+              - Medium
+              - High
+              - Critical
+        - name: hasFix
+          in: query
+          description: >-
+            If specified, only vulnerabilities with an available fix will be
+            retrieved
+          required: false
+          schema:
+            type: boolean
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the vulnerabilities list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+        - name: includeVulnExceptions
+          in: query
+          description: >-
+            If specified, returns also the set of vulnerability exception lists where the vulnerability is
+            contained and when it will expire.
+          required: false
+          schema:
+            type: boolean
+        - name: imageTag
+          in: query
+          description: |
+            The image's tag.
+            Required when "includeVulnExceptions" is set to true.
+          required: false
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved vulnerabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnerabilities"
+  /api/scanning/v1/images/by_id/{imageId}/vulnDirect/{vtype}:
+    get:
+      summary: |
+        Retrieve vulnerabilities data of an image [ImageId][Direct]
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: vtype
+          in: path
+          description: The type of vulnerabilities to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - non-os
+              - all
+        - name: filter
+          in: query
+          description: >-
+            If specified, only vulnerabilities that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - vuln
+              - fix
+              - severity
+              - package
+              - url
+              - feed
+              - feed_group
+              - package_name
+              - package_version
+              - package_type
+              - package_cpe
+              - package_pat
+        - name: filters
+          in: query
+          description: >-
+            A comma-separated list of severities. If specified, only
+            vulnerabilities of these severities will be retrieved
+          required: false
+          schema:
+            type: string
+            enum:
+              - Unknown
+              - Negligible
+              - Low
+              - Medium
+              - High
+              - Critical
+        - name: hasFix
+          in: query
+          description: >-
+            If specified, only vulnerabilities with an available fix will be
+            retrieved
+          required: false
+          schema:
+            type: boolean
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the vulnerabilities list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+        - name: includeVulnExceptions
+          in: query
+          description: >-
+            If specified, returns also the set of vulnerability exception lists where the vulnerability is
+            contained and when it will expire.
+          required: false
+          schema:
+            type: boolean
+        - name: imageTag
+          in: query
+          description: |
+            The image's tag.
+            Required when "includeVulnExceptions" is set to true.
+          required: false
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved vulnerabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnerabilities"
+  /api/scanning/v1/images/{imageDigest}/vulnexceptions:
+    get:
+      summary: |
+        Retrieve the vulnerability exception lists that this image is bound to via policies assignements [Digest]
+      tags:
+        - Scanning
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageDigest"
+        - name: tag
+          in: query
+          description: The image's tag
+          required: true
+          schema:
+            type: string
+        - name: withItems
+          in: query
+          description: |
+            Include or not "items" in the response. Useful when there are a lot of vulnerability exception lists.
+          required: false
+          schema:
+            type: boolean
+
+      responses:
+        "404":
+          description: Image digest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Image not found"
+        "200":
+          description: The associated vulnerability exception lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanningVulnException"
+  /api/scanning/v1/images/by_id/{imageId}/vulnexceptions:
+    get:
+      summary: |
+        Retrieve the vulnerability exception lists that this image is bound to via policies assignements [ImageID]
+      tags:
+        - Scanning
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: tag
+          in: query
+          description: The image's tag
+          required: true
+          schema:
+            type: string
+        - name: withItems
+          in: query
+          description: |
+            Include or not "items" in the response. Useful when there are a lot of vulnerability exception lists.
+          required: false
+          schema:
+            type: boolean
+
+      responses:
+        "404":
+          description: Image digest not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Image not found"
+        "200":
+          description: The associated vulnerability exception lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanningVulnException"
+  /api/scanning/v1/images/{imageDigest}/content/{ctype}:
+    get:
+      summary: |
+        Retrieve the content of an image [Digest]
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageDigest"
+        - name: ctype
+          in: path
+          description: The type of content to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - files
+              - npm
+              - gem
+              - python
+              - java
+        - name: filter
+          in: query
+          description: >-
+            If specified, only content entries that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: sortBy (for java type)
+          in: query
+          description: Field used to alphabetically sort by. Defaults to package
+          required: false
+          schema:
+            type: string
+            enum:
+              - package
+              - implementation-version
+              - specification-version
+              - maven-version
+              - location
+              - type
+              - origin
+        - name: sortBy (for files type)
+          in: query
+          description: Field used to alphabetically sort by. Defaults to filename
+          required: false
+          schema:
+            type: string
+            enum:
+              - filename
+              - gid
+              - linkdest
+              - mode
+              - sha256
+              - size
+              - type
+              - uid
+        - name: "sortBy (for os,npm,gem,python types)"
+          in: query
+          description: Field used to alphabetically sort by. Defaults to package
+          required: false
+          schema:
+            type: string
+            enum:
+              - package
+              - version
+              - size
+              - type
+              - origin
+              - license
+              - location
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the content list. Only entries >= offset
+            will be retrieved. Defaults to 0. If filter is also specified, this index
+            will be applied on the filtered list. An empty list will be retrieved if
+            this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningImageContent"
+  /api/scanning/v1/images/by_id/{imageId}/content/{ctype}:
+    get:
+      summary: |
+        Retrieve the content of an image [ImageID]
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: ctype
+          in: path
+          description: The type of content to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - files
+              - npm
+              - gem
+              - python
+              - java
+        - name: filter
+          in: query
+          description: >-
+            If specified, only content entries that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: sortBy (for java type)
+          in: query
+          description: Field used to alphabetically sort by. Defaults to package
+          required: false
+          schema:
+            type: string
+            enum:
+              - package
+              - implementation-version
+              - specification-version
+              - maven-version
+              - location
+              - type
+              - origin
+        - name: sortBy (for files type)
+          in: query
+          description: Field used to alphabetically sort by. Defaults to filename
+          required: false
+          schema:
+            type: string
+            enum:
+              - filename
+              - gid
+              - linkdest
+              - mode
+              - sha256
+              - size
+              - type
+              - uid
+        - name: "sortBy (for os,npm,gem,python types)"
+          in: query
+          description: Field used to alphabetically sort by. Defaults to package
+          required: false
+          schema:
+            type: string
+            enum:
+              - package
+              - version
+              - size
+              - type
+              - origin
+              - license
+              - location
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the content list. Only entries >= offset
+            will be retrieved. Defaults to 0. If filter is also specified, this index
+            will be applied on the filtered list. An empty list will be retrieved if
+            this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningImageContent"
+  /api/scanning/v1/images/{imageDigest}/checkSummary:
+    get:
+      summary: >-
+        Retrieve the policy evaluation summary of an image with the selected
+        timestamp [Digest]
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            type: string
+        - name: at
+          in: query
+          description: >-
+            The RFC-3339 timestamp of the evaluation. If not specified, the
+            most recent evaluation will be returned
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningCheckSummary"
+  /api/scanning/v1/images/by_id/{imageId}/checkSummary:
+    get:
+      summary: >-
+        Retrieve the policy evaluation summary of an image with the selected
+        timestamp [ImageID]
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: at
+          in: query
+          description: >-
+            The RFC-3339 timestamp of the evaluation. If not specified, the
+            most recent evaluation will be returned
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningCheckSummary"
+  /api/scanning/v1/images/{imageDigest}/checkSummary/{policyId}:
+    get:
+      summary: >-
+        Retrieve the policy evaluation summary of a specific policy for an image
+        with the selected timestamp [Digest]
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageDigest"
+        - name: policyId
+          in: path
+          description: The targeted policy ID
+          required: true
+          schema:
+            type: string
+        - name: at
+          in: query
+          description: >-
+            The RFC-3339 timestamp of the evaluation. If not specified, the
+            most recent evaluation will be returned
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation policy summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningCheckPolicySummary"
+  /api/scanning/v1/images/by_id/{imageId}/checkSummary/{policyId}:
+    get:
+      summary: >-
+        Retrieve the policy evaluation summary of a specific policy for an image
+        with the selected timestamp [ImageID]
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: policyId
+          in: path
+          description: The targeted policy ID
+          required: true
+          schema:
+            type: string
+        - name: at
+          in: query
+          description: >-
+            The RFC-3339 timestamp of the evaluation. If not specified, the
+            most recent evaluation will be returned
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation policy summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningCheckPolicySummary"
+  /api/scanning/v1/images/{imageDigest}/policyEvaluation:
+    get:
+      summary: >-
+        Retrieve the policy evaluation summary of an image [Digest]
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageDigest"
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyEvaluationResponse"
+  /api/scanning/v1/images/by_id/{imageId}/policyEvaluation:
+    get:
+      summary: >-
+        Retrieve the policy evaluation summary of an image [ImageID]
+      parameters:
+        - name: imageId
+          in: path
+          description: The targeted imageID
+          required: true
+          schema:
+            $ref: "#/components/schemas/ScanningImageId"
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyEvaluationResponse"
+  /api/scanning/v1/images/{imageDigest}/policyHistory:
+    get:
+      summary: >-
+        Retrieve the policy evaluation history of an image
+      parameters:
+        - name: imageDigest
+          in: path
+          description: The targeted image digest
+          required: true
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: The image full tag
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The policy evaluation history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyHistoryResponse"
+  /api/scanning/v1/policies:
+    get:
+      summary: >-
+        Retrieve the list of all the policies in the targeted Anchore policy
+        bundle
+      parameters:
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: List of all the policies in the targeted policy bundle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanningPolicy"
+    post:
+      summary: Create a new Anchore policy in the targeted Anchore policy bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningPolicy"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The newly created policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningPolicy"
+  /api/scanning/v1/auditPolicies:
+    get:
+      summary: >-
+        Retrieve the list of all the default audit policies IDs in the targeted
+        Anchore policy bundle
+      parameters:
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: >-
+            List of all the default audit policies IDs in the targeted policy
+            bundle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/scanning/v1/policies/{id}:
+    get:
+      summary: >-
+        Retrieve the policy with the given id in the targeted Anchore policy
+        bundle
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The policy with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningPolicy"
+        "404":
+          description: Policy not found
+    put:
+      summary: >-
+        Update the policy with the given id in the targeted Anchore policy
+        Bundle
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningPolicy"
+      responses:
+        "200":
+          description: The updated policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningPolicy"
+        "404":
+          description: Policy not found
+    delete:
+      summary: >-
+        Delete the policy with the given id in the targeted Anchore policy
+        Bundle
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Policy deleted
+        "404":
+          description: Policy not found
+  /api/scanning/v1/registryDisplayNames:
+    get:
+      summary: >-
+        Retrieve the list of all mappings between registry names and registry
+        display names
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: List of all registry display name mappings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanningRegistryDisplayNameMapping"
+  /api/scanning/v1/vulnexceptions: &vulnExceptionsPath
+    get:
+      summary: >-
+        Retrieve all the vulnerability exception lists in the targeted Anchore policy
+        bundle
+      parameters:
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+        - name: withItems
+          in: query
+          description: |
+            Include or not "items" in the response. Useful when there are a lot of vulnerability exception lists.
+          required: false
+          schema:
+            type: boolean
+
+      tags: &vulnExceptionsTags
+        - Scanning
+      responses:
+        "200":
+          description: All the vulnerability exception lists in the targeted policy bundle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanningVulnException"
+    post:
+      summary: Create a new vulnerability exception list in the targeted policy bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningVulnException"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The newly created vulnerability exception list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnException"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Missing field name"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "A vulnerability exception list with the given name already exists"
+  /api/scanning/v1/vulnexceptions/{id}: &vulnExceptionsIdPath
+    get:
+      summary: >-
+        Retrieve the vulnerability exception list with the given id in the active Anchore policy
+        bundle
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The vulnerability exception list with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnException"
+        "404":
+          description: Vulnerability exception list not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability exception list not found"
+    put:
+      summary: >-
+        Update the main attributes of the vulnerability exception list with the given id
+        in the targeted Anchore policy bundle
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          schema:
+            type: string
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningVulnExceptionPUTRequest"
+      responses:
+        "200":
+          description: The updated vulnerability exception list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnException"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Missing field name"
+        "404":
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability exception list not found"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "A vulnerability exception list with the given name already exists"
+    delete:
+      summary: >-
+        Delete the vulnerability exception list with the given id in the targeted Anchore policy
+        bundle
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Vulnerability exception list deleted
+  /api/scanning/v1/vulnexceptions/{id}/vulnerabilities:
+    post:
+      summary: |
+        Add a new vulnerability to a specific vulnerability exception list.
+      tags: *vulnExceptionsTags
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: |
+              The vulnerability exception list identifier
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningVulnExceptionItemRequest"
+      responses:
+        "200":
+          description: Vulnerability added to exception list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnExceptionItemResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Bad request"
+        "404":
+          description: Vulnerability exception list not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability exception list not found"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability already exists in the exception list"
+  /api/scanning/v1/vulnexceptions/{id}/vulnerabilities/{vulnId}:
+    get:
+      summary: |
+        Retrieve vulnerability informations in a specific vulnerability exception list
+      tags: *vulnExceptionsTags
+      parameters: &vulnExceptionItemParameters
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: |
+              The vulnerability exception list identifier
+        - name: vulnId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: |
+              The vulnerability identifier
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Fetched vulnerability details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnExceptionItemResponse"
+        "404":
+          description: Vulnerability exception list or vulnerability item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability exception list not found"
+    put:
+      summary: |
+        Update a vulnerability in a specific vulnerability exception list
+      tags: *vulnExceptionsTags
+      parameters: *vulnExceptionItemParameters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningVulnExceptionItemRequest"
+      responses:
+        "200":
+          description: Updated vulnerability details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnExceptionItemResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Bad request"
+        "404":
+          description: Vulnerability exception list or vulnerability item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability exception list not found"
+    delete:
+      summary: |
+        Remove a vulnerability from a specific vulnerability exception list
+      tags: *vulnExceptionsTags
+      parameters: *vulnExceptionItemParameters
+      responses:
+        "204":
+          description: Vulnerability removed
+  /api/scanning/v1/whitelists: *vulnExceptionsPath
+  /api/scanning/v1/whitelists/{id}: *vulnExceptionsIdPath
+  /api/scanning/v1/vulnerabilities/{id}:
+    get:
+      summary: |
+        Retrieve generic vulnerability informations
+      tags: *vulnExceptionsTags
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            description: |
+              The vulnerability identifier
+      responses:
+        "200":
+          description: Fetched vulnerability details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningVulnerabilityDetailsResponse"
+        "404":
+          description: Vulnerability not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Vulnerability not found"
+  /api/scanning/v1/mappings:
+    get:
+      summary: >-
+        Retrieve the list, in order, of all the mappings in the targeted Anchore
+        policy bundle
+      parameters:
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: List of all the mappings in the targeted policy bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningMappingList"
+        "404":
+          description: Bundle not found
+    put:
+      summary: Update the mappings in the targeted Anchore policy Bundle.
+      tags:
+        - Scanning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningMappingList"
+      responses:
+        "200":
+          description: The updated mapping list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningMappingList"
+        "404":
+          description: Bundle not found
+  /api/scanning/v1/whitelistedImages:
+    get:
+      summary: Retrieve the Image whitelist in the targeted Anchore bundle
+      parameters:
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: |
+            The list of whitelisted image names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningImageList"
+    put:
+      summary: Update the Image whitelist in the targeted Anchore bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningImageList"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: |
+            The updated list of whitelisted image names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningImageList"
+  /api/scanning/v1/blacklistedImages:
+    get:
+      summary: Retrieve the Image blacklist in the targeted Anchore bundle
+      parameters:
+        - name: bundleId
+          in: query
+          description: >-
+            Target bundle. If not specified, the currently active bundle will be
+            used.
+          required: false
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: |
+            The list of blacklisted image names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningImageList"
+    put:
+      summary: Update the Image blacklist in the targeted Anchore bundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningImageList"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: |
+            The updated list of blacklisted image names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/scanning/v1/alerts:
+    get:
+      summary: Retrieve the list of all the scanning alerts
+      tags:
+        - Scanning
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Maximum number of alerts in the response
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >-
+            An opaque string representing the current position in the list of
+            alerts
+      responses:
+        "200":
+          description: The list of requested alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ScanningAlert"
+                  responseMetadata:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type: string
+    post:
+      summary: Create a new scanning alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningAlert"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The newly created alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningAlert"
+  /api/scanning/v1/alerts/{id}:
+    get:
+      summary: Retrieve the scanning alert with the given id
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The scanning alert with the given id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningAlert"
+        "404":
+          description: Alert not found
+    put:
+      summary: Update the alert with the given id
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningAlert"
+      responses:
+        "200":
+          description: The updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningAlert"
+        "404":
+          description: Alert not found
+    delete:
+      summary: Delete the scanning alert with the given id
+      tags:
+        - Scanning
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Alert deleted
+        "404":
+          description: Alert not found
+  /api/scanning/v1/query/containers:
+    post:
+      summary: >-
+        Retrieve the list of runtime images in the selected scope, time and container
+        range.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningQueryBody"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The list of requested runtime images
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningQueryResponse"
+  /api/scanning/v1/reports:
+    post:
+      summary: Generate a report based on the given scope and conditions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningReportQueryBody"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The report was generated successfully for given conditions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningReportResponse"
+        "404":
+          description: The API was not found
+  /api/scanning/v1/reports/csv:
+    post:
+      summary: Generate a CSV formatted report based on the given scope and conditions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningReportQueryBody"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The download request was received successfully.
+          content:
+            text/csv:
+              schema:
+                type: string
+          headers:
+            content-disposition:
+              schema:
+                type: string
+              description: string in the format of 'attachment; filename={year}{month}{day}-{queryType}-report.csv"'
+            content-type:
+              schema:
+                type: string
+              description: text/csv
+        "404":
+          description: The result was not found
+  /api/scanning/v1/retention/policy:
+    get:
+      summary: Retrieve the retention policy
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retention policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningRetentionBody"
+        "500":
+          description: Unable to retrieve retention policy for the customer
+    put:
+      summary: Update retention policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningRetentionBody"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retention policy was successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningRetentionBody"
+        "400":
+          description: The retention policy was not updated
+        "500":
+          description: Internal server error, not due to request parameters
+  /api/scanning/v1/results:
+    get:
+      summary: Fetches all scanning results
+      description: Fetches all scanning results
+      parameters:
+        - name: filter
+          in: query
+          description: >-
+            If specified, only scan results that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descending.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to scanDate.
+          required: false
+          schema:
+            type: string
+            enum:
+              - repository
+              - tag
+              - digest
+              - scanDate
+        - name: registry
+          in: query
+          description: >-
+            A comma-separated list of registry display names. If specified, only
+            scan results from these registries will be retrieved
+          required: false
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the scan results list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        200:
+          description: an array of scan results matching the provided filters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningResultsBody"
+        400:
+          description: An invalid request was provided
+        500:
+          description: Internal server error, not due to request parameters
+  /api/scanning/v1/resultsDirect:
+    get:
+      summary: Fetches all scanning results
+      description: Fetches all scanning results
+      parameters:
+        - name: filter
+          in: query
+          description: >-
+            If specified, only scan results that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descending.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to scanDate.
+          required: false
+          schema:
+            type: string
+            enum:
+              - repository
+              - tag
+              - digest
+              - scanDate
+              - origin
+              - fulltag
+              - policystatus
+        - name: registry
+          in: query
+          description: >-
+            A comma-separated list of registry display names. If specified, only
+            scan results from these registries will be retrieved
+          required: false
+          schema:
+            type: string
+        - name: origins
+          in: query
+          description: >-
+            A comma-separated list of image origins. If specified, only
+            scan results from these origins will be retrieved
+          required: false
+          schema:
+            type: string
+        - name: policyStatus
+          in: query
+          description: >-
+            If specified, only scan results that has the policyStatus will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the scan results list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        200:
+          description: an array of scan results matching the provided filters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningResultsBody"
+        400:
+          description: An invalid request was provided
+        500:
+          description: Internal server error, not due to request parameters
+  /api/scanning/v1/onboarding:
+    get:
+      summary: Fetch secure onboarding steps' status
+      description: fetches secure specific onboarding steps
+      tags:
+        - Onboarding
+      responses:
+        200:
+          description: map with completion status of each step specific to customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingMetadata"
+        404:
+          description: No record found for customerId
+  /api/scanning/v1/onboarding/{customerId}:
+    get:
+      summary: Fetch customer secure onboarding steps' status
+      description: Admin api for fetching completion status for secure steps for customer
+      tags:
+        - Onboarding
+      responses:
+        200:
+          description: admin endpoint for getting steps specific to secure + customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingMetadata"
+        404:
+          description: No record found for customerId
+    put:
+      summary: Create or update customer secure onboarding steps' status
+      description: Admin endpoint for creating or updating secure specific onboarding steps for customer
+      tags:
+        - Onboarding
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        description: One or more updated completion states for onboarding steps in secure
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingMetadata"
+      responses:
+        200:
+          description: admin endpoint for updating onboarding steps specific to secure + customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingMetadata"
+        404:
+          description: No record found for customerId
+    delete:
+      description: Admin endpoint for removing secure specific onboarding steps for customer
+      summary: Removing secure specific onboarding steps for customer
+      tags:
+        - Onboarding
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        204:
+          description: Simple acknowledgment of a successfully deleted record
+        404:
+          description: The record for customerId did not exist
+  /api/scanning/v1/system/feeds:
+    get:
+      description: "Get the vulnerability feeds metadata information"
+      tags:
+        - Scanning
+      summary: "list feeds operations and information"
+      responses:
+        200:
+          description: "success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedMetadata"
+        500:
+          description: Internal Error
+  /api/scanning/v1/hosts:
+    post:
+      summary: Retrieve the list of host scan reports
+      parameters:
+        - name: filter
+          in: query
+          description: Free text search filter.
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - hostname
+              - cluster
+              - lastScanDate
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the entry list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        description: the request contains the scope
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostListRequest"
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The list of selected hosts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostListResponse"
+  /api/scanning/v1/hosts/deleteSuspended:
+    post:
+      summary: Delete the disabled host for a given scope
+      requestBody:
+        required: true
+        description: the request contains the scope
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostListRequest"
+      tags:
+        - Scanning
+      responses:
+        "204":
+          description: Host scan reports deleted
+        "404":
+          description: Host scan reports not found
+  /api/scanning/v1/hosts/{hostname}/{macAddress}:
+    get:
+      summary: >-
+        Retrieve the host scan report for a hostname
+      parameters:
+        - name: hostname
+          in: path
+          description: The ID of the host
+          required: true
+          schema:
+            type: string
+        - name: macAddress
+          in: path
+          description: The MAC address of the host
+          required: true
+          schema:
+            type: string
+        - name: hostTag
+          in: query
+          description: The tag associated to the host. Defaults to latest.
+          required: false
+          schema:
+            type: string
+            enum:
+              - latest
+              - previous
+              - diff
+        - name: vtype
+          in: query
+          description: The type of vulnerabilities to retrieve. Defaults to os.
+          required: false
+          schema:
+            type: string
+            enum:
+              - os
+              - non-os
+              - all
+        - name: filter
+          in: query
+          description: >-
+            If specified, only vulnerabilities that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - vuln
+              - fix
+              - severity
+              - package
+              - url
+              - feed
+              - feed_group
+              - package_name
+              - package_version
+              - package_type
+              - package_cpe
+              - package_pat
+        - name: filters
+          in: query
+          description: >-
+            A comma-separated list of severities. If specified, only
+            vulnerabilities of these severities will be retrieved
+          required: false
+          schema:
+            type: string
+            enum:
+              - Unknown
+              - Negligible
+              - Low
+              - Medium
+              - High
+              - Critical
+        - name: hasFix
+          in: query
+          description: >-
+            If specified, only vulnerabilities with an available fix will be
+            retrieved
+          required: false
+          schema:
+            type: boolean
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the entry list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The host scan report for the requested hostname
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostScanReport"
+        "404":
+          description: Host scan report not found
+  /api/scanning/v1/hosts/{hostname}/{macAddress}/content/{hostId}/{ctype}:
+    get:
+      summary: |
+        Retrieve the content of an host
+      parameters:
+        - name: hostname
+          in: path
+          description: The hostname
+          required: true
+          schema:
+            type: string
+        - name: macAddress
+          in: path
+          description: The MAC address of the host
+          required: true
+          schema:
+            type: string
+        - name: hostId
+          in: path
+          description: The ID of the host
+          required: true
+          schema:
+            type: string
+        - name: ctype
+          in: path
+          description: The type of content to retrieve
+          required: true
+          schema:
+            type: string
+            enum:
+              - os
+              - npm
+              - gem
+              - python
+              - java
+        - name: filter
+          in: query
+          description: >-
+            If specified, only content entries that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: sortBy (for java type)
+          in: query
+          description: Field used to alphabetically sort by. Defaults to package
+          required: false
+          schema:
+            type: string
+            enum:
+              - package
+              - implementation-version
+              - specification-version
+              - maven-version
+              - location
+              - type
+              - origin
+        - name: "sortBy (for os,npm,gem,python types)"
+          in: query
+          description: Field used to alphabetically sort by. Defaults to package
+          required: false
+          schema:
+            type: string
+            enum:
+              - package
+              - version
+              - size
+              - type
+              - origin
+              - license
+              - location
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the content list. Only entries >= offset
+            will be retrieved. Defaults to 0. If filter is also specified, this index
+            will be applied on the filtered list. An empty list will be retrieved if
+            this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The retrieved content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningImageContent"
+  /api/scanning/v1/hosts/{hostname}/{macAddress}/report:
+    get:
+      summary: >-
+        Retrieve the host scan report for a hostname
+      parameters:
+        - name: hostname
+          in: path
+          description: The ID of the host
+          required: true
+          schema:
+            type: string
+        - name: macAddress
+          in: path
+          description: The MAC address of the host
+          required: true
+          schema:
+            type: string
+        - name: exportType
+          in: query
+          description: The report export type (json, csv, pdf). Defaults to json.
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - csv
+              - pdf
+        - name: hostTag
+          in: query
+          description: The tag associated to the host. Defaults to latest.
+          required: false
+          schema:
+            type: string
+            enum:
+              - latest
+              - previous
+              - diff
+        - name: vtype
+          in: query
+          description: The type of vulnerabilities to retrieve. Defaults to os.
+          required: false
+          schema:
+            type: string
+            enum:
+              - os
+              - non-os
+              - all
+        - name: filter
+          in: query
+          description: >-
+            If specified, only vulnerabilities that contain this substring will
+            be retrieved
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sorting method. Defaults to descendent.
+          required: false
+          schema:
+            type: string
+            enum:
+              - desc
+              - asc
+        - name: sortBy
+          in: query
+          description: >-
+            Field used to alphabetically sort by. Defaults to severity.
+          required: false
+          schema:
+            type: string
+            enum:
+              - vuln
+              - fix
+              - severity
+              - package
+              - url
+              - feed
+              - feed_group
+              - package_name
+              - package_version
+              - package_type
+              - package_cpe
+              - package_pat
+        - name: filters
+          in: query
+          description: >-
+            A comma-separated list of severities. If specified, only
+            vulnerabilities of these severities will be retrieved
+          required: false
+          schema:
+            type: string
+            enum:
+              - Unknown
+              - Negligible
+              - Low
+              - Medium
+              - High
+              - Critical
+        - name: hasFix
+          in: query
+          description: >-
+            If specified, only vulnerabilities with an available fix will be
+            retrieved
+          required: false
+          schema:
+            type: boolean
+        - name: offset
+          in: query
+          description: >-
+            If specified, a 0-based index on the entry list. Only
+            entries >= offset will be retrieved. Defaults to 0. If filter is
+            also specified, this index will be applied on the filtered list.
+            An empty list will be retrieved if this index overflows the list.
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: >-
+            If specified, a limit on the number of entries retrieved. If filter
+            is also specified, the limit will be applied on the filtered list.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+          required: false
+          schema:
+            type: integer
+      tags:
+        - Scanning
+      responses:
+        "200":
+          description: The host scan report for the requested hostname
+          content:
+            text/csv:
+              schema:
+                type: string
+          headers:
+            content-disposition:
+              schema:
+                type: string
+              description: string in the format of 'attachment; filename={year}{month}{day}-{queryType}-report.csv"'
+            content-type:
+              schema:
+                type: string
+              description: text/csv
+        "404":
+          description: Host scan report not found
+components:
+  schemas:
+    ScanningImageId:
+      type: string
+      description: |
+        the imageID that identifies the image
+      minLength: 1
+      example: "d4d4f50f871a02502debe52927b7c5769a1b9ed2f4a06ea0e3c3623ba089511b"
+    ScanningImageDigest:
+      type: string
+      description: |
+        an image digest string, starting with "sha256:" prefix
+      minLength: 1
+      example: "sha256:7492c1f615e3651629bd6c61777e9660caa3819cf3561a47d1d526dfeee02cf6"
+    ScanningVulnSummaryMap:
+      type: object
+      properties:
+        vulnType:
+          type: object
+          properties:
+            severity:
+              type: integer
+    ScanningVulnerabilities:
+      type: object
+      properties:
+        imageDigest:
+          type: string
+          description: The targeted image digest
+        imageID:
+          type: string
+          description: The targeted imageID
+        vtype:
+          type: string
+          description: The type of vulnerabilities retrieved
+        filter:
+          type: string
+          description: The filter used
+        sort:
+          type: string
+          description: The sorting method used
+        sortBy:
+          type: string
+          description: The field used to sort the result
+        hasFix:
+          type: boolean
+          description: Wether only vulns with a fix have been retrieved
+        filters:
+          type: string
+          description: The severities retrieved
+        offset:
+          type: integer
+          description: The start offset used
+        limit:
+          type: integer
+          description: The limit used. 0 for no limit.
+        canLoadMore:
+          type: boolean
+          description: True if more results can be fetched.
+        totalVulns:
+          type: integer
+          description: The total count of vulnerabilities.
+        vulnCounts:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: The total count of vulnerabilities.
+            new:
+              type: integer
+              description: The total count of new vulnerabilities.
+            fixed:
+              type: integer
+              description: The total count of fixed vulnerabilities.
+            shared:
+              type: integer
+              description: The total count of shared vulnerabilities.
+          description: Total counts of comparison statuses.
+        vulns:
+          type: array
+          description: The vulnerabilities retrieved.
+          items:
+            type: object
+            description: Anchore Vulnerability object plus comparison status.
+            properties:
+              feed:
+                type: string
+                description: |
+                  The feed type, Always "vulnerabilities"
+                example: "vulnerabilities"
+              feed_group:
+                type: string
+                description: |
+                  The distribution group name
+                example: "debian:10"
+              fix:
+                type: string
+                description: |
+                  If exists, the fix version
+                example: "None"
+              nvd_data:
+                type: array
+                items:
+                  type: object
+                  description: Anchore nvd_data object
+              package:
+                type: string
+                description: |
+                  The package full name
+                example: "gcc-8-base-8.3.0-6"
+              package_cpe:
+                type: string
+                example: "None"
+              package_name:
+                type: string
+                description: |
+                  The package name
+                example: "gcc-8-base"
+              package_path:
+                type: string
+                description: |
+                  The package path
+                example: "pkgdb"
+              package_type:
+                type: string
+                description: |
+                  The package type
+                example: "dpkg"
+              severity:
+                type: string
+                description: |
+                  The vulnerability severity level
+                example: "Medium"
+              url:
+                type: string
+                description: |
+                  URL to full description of the vulnerability
+                example: "https://security-tracker.debian.org/tracker/CVE-2018-12886"
+              vuln:
+                type: string
+                description: |
+                  The vulnerability identifier
+                example: "CVE-2018-12886"
+              vulnexceptions:
+                type: array
+                description: |
+                  List of vulnExceptions by id/name along with the vulnerability expiration for that exception list
+                readOnly: true
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: vuln-exception-list-id
+                    name:
+                      type: string
+                      example: some-name
+                    expires:
+                      type: integer
+                      nullable: true
+                      description: |
+                        The timestamp till the vulnerability will be disabled. If `null`, the entry never expires.
+
+                        **Note**: the actual expiration will be computed only once a day for the entire Sysdig installation.
+                        The task will be executed each day at 0:00 UTC (4:00 PM PST, 5:00 PM PDT) and will consider
+                        expiration dates which are <= than the current **date**.
+    ScanningImageContent:
+      type: object
+      properties:
+        imageDigest:
+          type: string
+          description: The targeted image digest
+        ctype:
+          type: string
+          description: The type of content retrieved
+        filter:
+          type: string
+          description: The filter used
+        sort:
+          type: string
+          description: The sorting method used
+        sortBy:
+          type: string
+          description: The field used to sort the result
+        offset:
+          type: integer
+          description: The start offset used
+        limit:
+          type: integer
+          description: The limit used. 0 for no limit.
+        canLoadMore:
+          type: boolean
+          description: True if more results can be fetched.
+        content:
+          type: array
+          items:
+            type: object
+            description: >-
+              Anchore Content{Package,Files,JAVA}Response.Content entry
+              object
+          description: The content retrieved
+    ScanningCheckSummary:
+      type: object
+      properties:
+        imageDigest:
+          type: string
+          description: The targeted image digest
+        imageId:
+          $ref: "#/components/schemas/ScanningImageId"
+        at:
+          type: string
+          description: The RFC-3339 timestamp of the evaluation
+        tag:
+          type: string
+          description: The image full tag
+        status:
+          type: string
+          description: Final evaluation status
+        policyBundleId:
+          type: string
+          description: The bundle ID used in this evaluation
+        finalAction:
+          type: string
+          description: Final evaluation action
+        finalActionReason:
+          type: string
+          description: Final evaluation action reason
+        nStops:
+          type: integer
+          description: Total number of stop rules triggered
+        nWarns:
+          type: integer
+          description: Total number of warn rules triggered
+        policies:
+          type: array
+          items:
+            type: object
+            properties:
+              policyId:
+                type: string
+                description: Policy ID
+              policyName:
+                type: string
+                description: Policy Name
+              nStops:
+                type: integer
+                description: Number of stop rules triggered from this policy
+              nWarns:
+                type: integer
+                description: Number of warn rules triggered from this policy
+              rules:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    gate:
+                      type: string
+                      description: An Anchore rule gate
+                    trigger:
+                      type: string
+                      description: An Anchore rule trigger
+                    nStops:
+                      type: integer
+                      description: >-
+                        Number of stop rules triggered from this gate/trigger
+                        pair
+                    nWarns:
+                      type: integer
+                      description: >-
+                        Number of warn rules triggered from this gate/trigger
+                        pair
+    PolicyHistoryResponse:
+      type: object
+      properties:
+        digest:
+          type: string
+          description: the image digest
+        tag:
+          type: string
+          description: the Anchore tag
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              policyId:
+                type: string
+                description: the policy ID
+              status:
+                type: string
+                description: the policy status
+              lastEvaluatedAt:
+                type: integer
+                description: The RFC-3339 timestamp of the evaluation
+    PolicyEvaluationResponse:
+      type: object
+      properties:
+        imageDigest:
+          type: string
+          description: The targeted image digest
+        at:
+          type: integer
+          description: The RFC-3339 timestamp of the evaluation
+        tag:
+          type: string
+          description: The image full tag
+        status:
+          type: string
+          description: Final evaluation status
+        bundleId:
+          type: string
+          description: The bundle ID used in this evaluation
+        finalAction:
+          type: string
+          description: Final evaluation action
+        finalActionReason:
+          type: string
+          description: Final evaluation action reason
+        nStops:
+          type: integer
+          description: Total number of stop rules triggered
+        nWarns:
+          type: integer
+          description: Total number of warn rules triggered
+        policies:
+          type: array
+          items:
+            type: object
+            properties:
+              comment:
+                type: string
+                description: Policy comment
+              id:
+                type: string
+                description: Policy ID
+              name:
+                type: string
+                description: Policy Name
+              varsion:
+                type: string
+                description: Policy version
+              rules:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    action:
+                      type: string
+                      description: Rule action
+                    gate:
+                      type: string
+                      description: Anchore rule gate
+                    id:
+                      type: string
+                      description: Rule ID
+                    trigger:
+                      type: string
+                      description: Anchore rule trigger
+                    params:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            description: Parameter Name
+                          value:
+                            type: string
+                            description: Parameter Value
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              policyId:
+                type: string
+                description: Policy ID
+              policyName:
+                type: string
+                description: Policy Name
+              nStops:
+                type: integer
+                description: Number of stop rules triggered from this policy
+              nWarns:
+                type: integer
+                description: Number of warn rules triggered from this policy
+              gateResults:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    gate:
+                      type: string
+                      description: An Anchore rule gate
+                    trigger:
+                      type: string
+                      description: An Anchore rule trigger
+                    nStops:
+                      type: integer
+                      description: >-
+                        Number of stop rules triggered from this gate/trigger
+                        pair
+                    nWarns:
+                      type: integer
+                      description: >-
+                        Number of warn rules triggered from this gate/trigger
+                        pair
+                    ruleREsults:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          gate:
+                            type: string
+                            description: An Anchore rule gate
+                          trigger:
+                            type: string
+                            description: Anchore rule trigger
+                          checkOutput:
+                            type: string
+                            description: the policy rule check output
+                          gateAction:
+                            type: string
+                            description: the gate action
+                          triggerId:
+                            type: string
+                            description: the trigger ID
+                          whitelisted:
+                            type: boolean
+                            description: rule whitelisted (true/false)
+    ScanningCheckPolicySummary:
+      type: object
+      properties:
+        imageId:
+          $ref: "#/components/schemas/ScanningImageId"
+        imageDigest:
+          $ref: "#/components/schemas/ScanningImageDigest"
+        at:
+          type: string
+          description: The RFC-3339 timestamp of the evaluation
+        tag:
+          type: string
+          description: The image full tag
+        policyId:
+          type: string
+          description: The targeted policy ID
+        policy:
+          type: object
+          description: An Anchore Policy object
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              gate:
+                type: string
+                description: An Anchore rule gate
+              trigger:
+                type: string
+                description: An Anchore rule trigger
+              nStops:
+                type: integer
+                description: Number of stop rules triggered from this gate/trigger pair
+              nWarns:
+                type: integer
+                description: Number of warn rules triggered from this gate/trigger pair
+              rows:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanningCheckRuleOutput"
+                description: the list of outputs for this pair/gate trigger
+    ScanningCheckRuleOutput:
+      type: object
+      properties:
+        Image_Id:
+          type: string
+          description: The ID of the image that triggered this rule.
+        Repo_Tag:
+          type: string
+          description: The name of the image that triggered this rule.
+        Trigger_Id:
+          type: string
+          description: The trigger identifier responsible for this rule output.
+        Gate:
+          type: string
+          description: The gate of this rule.
+        Trigger:
+          type: string
+          description: The trigger of this rule.
+        Check_Output:
+          type: string
+          description: Human-readable output string of this rule.
+        Gate_Action:
+          type: string
+          description: The action of this rule.
+        Whitelisted:
+          type: string
+          description: Whether this rule was whitelisted in the policy.
+        Policy_Id:
+          type: string
+          description: The ID of the policy that contains the triggered rule.
+    ScanningPolicy:
+      type: object
+      required:
+        - name
+        - rules
+      properties:
+        id:
+          type: string
+          description: >
+            Unique identifier associated with this policy. It's created backend
+            side.
+        comment:
+          type: string
+          description: |
+            A human-readable description.
+        name:
+          type: string
+          description: |
+            The name of the policy.
+        version:
+          type: string
+          description: |
+            Version of the policy.
+        isDefault:
+          type: boolean
+          description: >
+            If true, this policy is referenced in the default mapping
+            (registry=repository=tag=*)
+        rules:
+          description: >
+            An array of Anchore PolicyRule elements (while creating/updating a
+            policy, new rule IDs will be created backend side)
+          type: array
+          items:
+            type: object
+        policyBundleId:
+          type: string
+          description: >
+            An Anchore policy bundle ID. While retrieving this object, this is the
+            bundle ID that contains this policy. While inserting/updating, this is
+            the target bundle, and if not specified, the currently active bundle
+            will be used.
+    ScanningRegistryDisplayNameMapping:
+      type: object
+      properties:
+        registryName:
+          type: string
+        displayName:
+          type: string
+    ScanningVulnExceptionItemRequest:
+      type: object
+      required:
+        - gate
+        - trigger_id
+      properties:
+        gate:
+          type: string
+          description: |
+            The Anchore gate kind
+          example: "vulnerabilities"
+        trigger_id:
+          type: string
+          description: |
+            The name of the vulnerability
+          example: CVE-2020-9071+*
+        notes:
+          type: string
+          nullable: true
+          description: |
+            The user written notes attached to a specific vulnerability exception item
+        expiration_date:
+          type: integer
+          nullable: true
+          description: |
+            The timestamp till the vulnerability will be disabled. If `null`, the entry never expires.
+
+            **Note**: the actual expiration will be computed only once a day for the entire Sysdig installation.
+            The task will be executed each day at 0:00 UTC (4:00 PM PST, 5:00 PM PDT) and will consider
+            expiration dates which are <= than the current **date**.
+          example: 1657622089
+        enabled:
+          type: boolean
+          description: |
+            Enable/disable vulnerability when considering exceptions.
+            Useful, in combination with `expiration_date` to handle temporary exceptions.
+    ScanningVulnExceptionItemResponse:
+      allOf:
+        - type: object
+          required:
+            - id
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+              description: |
+                The vulnerability identifier. Computed server side
+            createdAt:
+              type: integer
+              example: 1595433581
+              description: |
+                The timestamp when the vulnerability has been added to the exception list
+            updatedAt:
+              type: integer
+              example: 1595433581
+              description: |
+                The timestamp when the vulnerability has been modified in one of its fields.
+            description:
+              type: string
+              nullable: true
+              example: |
+                There is a few bytes out-of-bounds read vulnerability in some Huawei products.
+                The software reads data past the end of the intended buffer when parsing certain message,
+                an authenticated attacker could exploit this vulnerability by sending crafted messages to the device.
+                Successful exploit may cause service abnormal in specific scenario.
+                Affected product versions include:AR120-S versions V200R007C00SPC900,V200R007C00SPCa00
+              description: |
+                The vulnerability generic description
+        - $ref: "#/components/schemas/ScanningVulnExceptionItemRequest"
+    ScanningVulnException:
+      type: object
+      required:
+        - id
+        - items
+        - createdAt
+        - updatedAt
+        - name
+        - version
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: >
+            Unique identifier associated with this vulnerability exception list. It's created backend
+            side.
+        createdAt:
+          type: integer
+          readOnly: true
+          description: |
+            The timestamp when the vulnerability exception list has been created
+          example: 1595433581
+        updatedAt:
+          type: integer
+          readOnly: true
+          description: |
+            The timestamp when the vulnerability exception list has been updated
+          example: 1595433581
+        comment:
+          type: string
+          description: |
+            A human-readable description.
+        name:
+          type: string
+          description: |
+            The name of the vulnerability exception list.
+        version:
+          type: string
+          description: |
+            Version of the vulnerability exception list. Should be "1_0"
+        items:
+          type: array
+          description: >
+            An array of vulnerability exception items (while creating/updating a list,
+            new item IDs will be created backend side)
+          items:
+            $ref: "#/components/schemas/ScanningVulnExceptionItemResponse"
+        policyBundleId:
+          type: string
+          readOnly: true
+          description: >
+            An Anchore policy bundle ID. While retrieving this object, this is the
+            bundle ID that contains this vulnerability exception list. While inserting/updating,
+            this is the target bundle, and if not specified, the currently active bundle
+            will be used.
+    ScanningVulnExceptionPUTRequest:
+      allOf:
+        - $ref: "#/components/schemas/ScanningVulnException"
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              deprecated: true
+              description: |
+                An array of vulnerability exception items (while creating/updating a list,
+                new item IDs will be created backend side)
+
+                **Deprecated**: use POST .../vulnexceptions/{id}/vulnerabilities instead
+              type: array
+              items:
+                $ref: "#/components/schemas/ScanningVulnExceptionItemRequest"
+    ScanningVulnerabilityDetailsResponse:
+      type: object
+      required:
+        - id
+        - link
+        - feeds
+        - description
+      properties:
+        id:
+          type: string
+          example: CVE-2020-7091
+          description: |
+            The vulnerability identifier
+        description:
+          type: string
+          example: "This vulnerability will make kittens explode"
+          description: |
+            The vulnerability human readable description as reported in the NVD database
+        feeds:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - link
+              - severity
+            properties:
+              name:
+                type: string
+                example: "ubuntu:12.04"
+                description: |
+                  The source
+              link:
+                type: string
+                example: "http://people.ubuntu.com/~ubuntu-security/cve/CVE-2020-8492"
+                description: |
+                  The specific url by source
+              severity:
+                type: string
+                example: "High"
+                description: |
+                  The specific severity by source
+    ScanningImageList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          description: |
+            A list of image names to be {white,black}listed
+          type: array
+          items:
+            type: string
+        policyBundleId:
+          type: string
+          description: >
+            An Anchore policy bundle ID. While retrieving this object, this is the
+            bundle ID that contains this image list. While inserting/updating,
+            this is the target bundle, and if not specified, the currently active
+            bundle will be used.
+    ScanningMappingList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          description: |
+            A list of mappings as Anchore MappingRule elements.
+
+            **Note**: the default mapping should always be the last one in the array.
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              whitelist_ids:
+                type: array
+                items:
+                  type: string
+              repository:
+                type: string
+                example: "quay.io"
+              registry:
+                type: string
+                example: "nginx"
+              policy_ids:
+                type: array
+                items:
+                  type: string
+              image:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "tag"
+                  value:
+                    type: string
+                    example: "latest"
+
+        policyBundleId:
+          type: string
+          description: >
+            An Anchore policy bundle ID. While retrieving this object, this is
+            the bundle ID that contains this mapping list. While
+            inserting/updating, this is the target bundle, and if not specified,
+            the currently active bundle will be used.
+    ScanningAlert:
+      type: object
+      required:
+        - name
+        - type
+        - enabled
+        - autoscan
+        - triggers
+        - notificationChannelIds
+      properties:
+        alertId:
+          type: string
+          description: >
+            Unique identifier associated with this alert. It's created backend
+            side.
+        enabled:
+          type: boolean
+          description: Whether this alert should actually be applied.
+        name:
+          type: string
+          description: The name of the alert.
+        description:
+          type: string
+          description: The description of the alert.
+        type:
+          type: string
+          description: The type of the alert.
+          enum:
+            - runtime
+            - repository
+        scope:
+          type: string
+          description: >-
+            An AND-composed string of predicates that selects the scope in which
+            the alert will be applied. Only used when type=runtime.
+        repositories:
+          type: array
+          items:
+            type: object
+            required:
+              - registry
+              - repository
+              - tag
+            properties:
+              registry:
+                type: string
+                description: The image registry.
+              repository:
+                type: string
+                description: The image repository.
+              tag:
+                type: string
+                description: The image tag.
+          description: >-
+            The list of images for which the alert will be applied.
+            Only used when type=repository.
+        triggers:
+          type: object
+          items:
+            type: object
+            required:
+              - unscanned
+              - analysis_update
+              - vuln_update
+              - policy_eval
+            properties:
+              unscanned:
+                type: boolean
+                description: >-
+                  True if the alert should trigger for unscanned images. Only
+                  used when type=runtime.
+              analysis_update:
+                type: boolean
+                description: >-
+                  True if the alert should trigger when a new image is analyzed.
+                  Only used when type=repository.
+              vuln_update:
+                type: boolean
+                description: >-
+                  True if the alert should trigger if the set of vulnerabilities
+                  for an image changes.
+              policy_eval:
+                type: boolean
+                description: >-
+                  True if the alert should trigger when the final result of the
+                  policy evaluation for a policy changes.
+        autoscan:
+          type: boolean
+          description: True if the alert should automatically analyze unscanned images.
+        onlyPassFail:
+          type: boolean
+          description: >-
+            True if the policy_eval trigger should activate only when the result
+            changes from pass to fail.
+        notificationChannelIds:
+          type: array
+          items:
+            type: integer
+    ScanningQueryBody:
+      type: object
+      required:
+        - scope
+        - time
+        - skipPolicyEvaluation
+      properties:
+        scope:
+          type: string
+          description: >-
+            An AND-composed string of predicates that selects the scope in which
+            the alert will be applied.
+        time:
+          type: object
+          description: "The selected time range (unix timestamp, microseconds)"
+          properties:
+            from:
+              type: integer
+            to:
+              type: integer
+        skipPolicyEvaluation:
+          type: boolean
+          description: "If true, no policy evaluations will be triggered for the images."
+    ScanningQueryResponse:
+      type: object
+      properties:
+        scope:
+          type: string
+        time:
+          type: object
+          properties:
+            from:
+              type: integer
+            to:
+              type: integer
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              imageId:
+                type: string
+              repo:
+                type: string
+              tag:
+                type: string
+              digest:
+                type: string
+              parentDigest:
+                type: string
+              analysisStatus:
+                type: string
+              policyEvalStatus:
+                type: string
+              containers:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    containerId:
+                      type: string
+    ScanningReportQueryBody:
+      type: object
+      required:
+        - queryType
+        - scopeType
+      properties:
+        queryType:
+          type: string
+          description: Generate the report based on the given query type.
+          enum:
+            - image
+            - vuln
+            - pkg
+            - policies
+        scopeType:
+          type: string
+          description: Filter the results based on the given scope.
+          enum:
+            - runtime
+            - static
+        runtimeScope:
+          type: object
+          required:
+            - scope
+          properties:
+            scope:
+              type: string
+              description: >-
+                An AND-composed string of predicates that selects the scope in which
+                the alert will be applied.
+            time:
+              type: object
+              description: "The selected time range (unix timestamp, microseconds)"
+              properties:
+                from:
+                  type: integer
+                to:
+                  type: integer
+        staticScope:
+          type: object
+          properties:
+            registry:
+              type: string
+              description: >-
+                Filter the results based on the registry name.
+            repository:
+              type: string
+              description: >-
+                Filter the results based on the repository name.
+            tag:
+              type: string
+              description: >-
+                Filter the results based on the given image tag.
+        vulnQueryFilter:
+          type: object
+          properties:
+            vulnId:
+              type: string
+              description: >-
+                Filter the results based on the vulnerability ID.
+            age:
+              type: object
+              description: "The selected time range (value as specified by iso8601)"
+              properties:
+                from:
+                  type: string
+                  example: "2019-07-31T00:00:00-07:00"
+                to:
+                  type: string
+                  example: "2019-08-02T20:15:24-07:00"
+            severity:
+              type: string
+              description: >-
+                Filter the results based on the vulnerability severity.
+              enum:
+                - Critical
+                - High
+                - Medium
+                - Low
+                - Negligible
+                - Unknown
+            fixAvailable:
+              type: string
+              description: >-
+                Filter the results based on vulnerabolity with fixes.
+            pkgName:
+              type: string
+              description: >-
+                Filter the results based on the given package name.
+            pkgVersion:
+              type: string
+              description: >-
+                Filter the results based on the given package version.
+        pkgQueryFilter:
+          type: object
+          properties:
+            name:
+              type: string
+              description: >-
+                Filter the results based on the given package name.
+            version:
+              type: string
+              description: >-
+                Filter the results based on the given package version.
+        policyQueryFilter:
+          type: object
+          properties:
+            imageDigest:
+              type: string
+              description: "Filter the results based on image digest"
+            result:
+              type: string
+              description: >-
+                Filter the results based on the result of a policy evaluation.
+              enum:
+                - pass
+                - fail
+            lastEvaluatedAfter:
+              type: string
+              description: >-
+                Timestamp value for policy evaluation (value as specified by iso8601).
+                Show all the policy evaluations after this timestamp.
+              example: "2019-07-15T14:47:08-07:00"
+            lastEvaluatedBefore:
+              type: string
+              description: >-
+                Timestamp value for policy evaluation (value as specified by iso8601)
+                Show all the policy evaluations before this timestamp.
+              example: "2019-07-15T14:47:08-07:00"
+        sort:
+          description: Sorting method. Defaults to descendent.
+          type: string
+          enum:
+            - desc
+            - asc
+        sortBy:
+          type: string
+          description: >-
+            Field used to determine sorting column. Defaults to severity.
+          enum:
+            - imageName
+            - tag
+            - vulnId
+            - fixedIn
+            - severity
+            - pkgName
+            - pkgVersion
+            - evaluationDate
+            - bundleId
+            - result
+        offset:
+          type: integer
+          description: >-
+            If specified, a 0-based index on the list. Only
+            entries >= offset will be retrieved. Defaults to 0.
+        limit:
+          type: integer
+          description: >-
+            If specified, a limit on the number of entries retrieved.
+            limit must be >= 1 and if it overflows the list all entries will be
+            retrieved.
+        filter:
+          type: string
+          description: The string on which the results are to be filtered.
+    ScanningReportResponse:
+      type: object
+      properties:
+        imageQueryResponse:
+          type: array
+          items:
+            type: object
+            properties:
+              imageName:
+                type: string
+              vulnId:
+                type: string
+              severity:
+                type: string
+              age:
+                type: integer
+              pkgName:
+                type: string
+              pkgVersion:
+                type: string
+              tag:
+                type: string
+              fixedIn:
+                type: string
+              depName:
+                type: string
+              depVersion:
+                type: string
+              runtime:
+                type: object
+                properties:
+                  clusterName:
+                    type: string
+                  namespace:
+                    type: string
+                  deployment:
+                    type: string
+                  pod:
+                    type: string
+                  hostname:
+                    type: string
+                  containerLabels:
+                    type: string
+        vulnQueryResponse:
+          type: array
+          items:
+            type: object
+            properties:
+              vulnId:
+                type: string
+              severity:
+                type: string
+              age:
+                type: integer
+              pkgName:
+                type: string
+              pkgVersion:
+                type: string
+              tag:
+                type: string
+              fixedIn:
+                type: string
+              imageName:
+                type: string
+              depName:
+                type: string
+              depVersion:
+                type: string
+              runtime:
+                type: object
+                properties:
+                  clusterName:
+                    type: string
+                  namespace:
+                    type: string
+                  deployment:
+                    type: string
+                  pod:
+                    type: string
+                  hostname:
+                    type: string
+                  containerLabels:
+                    type: string
+        pkgQueryResponse:
+          type: array
+          items:
+            type: object
+            properties:
+              pkgName:
+                type: string
+              pkgVersion:
+                type: string
+              imageNames:
+                type: array
+                items:
+                  type: string
+              vulnIds:
+                type: array
+                items:
+                  type: string
+              runtime:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    clusterName:
+                      type: string
+                    namespace:
+                      type: string
+                    deployment:
+                      type: string
+                    pod:
+                      type: string
+                    hostname:
+                      type: string
+                    containerLabels:
+                      type: string
+        policyQueryResponse:
+          type: array
+          items:
+            type: object
+            properties:
+              imageName:
+                type: string
+              tag:
+                type: string
+              result:
+                type: string
+              policyId:
+                type: string
+              evaluationDate:
+                type: string
+              finalAction:
+                type: string
+              imageDigest:
+                type: string
+              runtime:
+                type: object
+                properties:
+                  clusterName:
+                    type: string
+                  namespace:
+                    type: string
+                  deployment:
+                    type: string
+                  pod:
+                    type: string
+                  hostname:
+                    type: string
+                  containerLabels:
+                    type: string
+        sort:
+          type: string
+          description: The sorting method used
+        sortBy:
+          type: string
+          description: The field used to sort the result
+        offset:
+          type: integer
+          description: The start offset used
+        limit:
+          type: integer
+          description: The limit used. Must be >= 1.
+        canLoadMore:
+          type: boolean
+          description: True if more results can be fetched.
+        filter:
+          type: string
+          description: The string on which the results are to be filtered.
+    ScanningRetentionBody:
+      type: object
+      required:
+        - datePolicy
+        - tagsPolicy
+      properties:
+        datePolicy:
+          type: integer
+          description: Date policy in seconds. By default, the range is between 30 and 90 days (in seconds)
+          example: 2592000
+        tagsPolicy:
+          type: integer
+          description: Tags policy. Number of tags that triggers the retention policy
+          example: 5
+    ScanningResultsBody:
+      type: object
+      properties:
+        options:
+          type: object
+          properties:
+            filter:
+              type: string
+              description: The string on which the results are to be filtered.
+            registry:
+              type: string
+              description: A comma seperated list of registries to filter by
+            sort:
+              type: string
+              description: The sort direction (default desc)
+              enum:
+                - asc
+                - desc
+            sortBy:
+              type: string
+              description: The field used to sort the result
+              enum:
+                - repository
+                - tag
+                - digest
+                - scanDate
+            offset:
+              type: integer
+              description: The start offset used
+            limit:
+              type: integer
+              description: The limit used. Must be >= 1.
+            canLoadMore:
+              type: boolean
+              description: True if more results can be fetched.
+        totalRows:
+          type: integer
+          description: The total number of images scanned
+        metadata:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: The total number of images scanned
+            policyStatus:
+              type: object
+              properties:
+                totalFailed:
+                  type: integer
+                  description: The total number of images that are NOT pass the evaluation
+                totalPassed:
+                  type: integer
+                  description: The total number of images that are pass the evaluation
+                totalNotEvaluated:
+                  type: integer
+                  description: The total number of images that are not evaluated yet
+            origins:
+              type: object
+              properties:
+                sysdig-cli:
+                  type: number
+                  description: The total images that has this specific origin
+                sysdig-secure-ui:
+                  type: number
+                  description: The total images that has this specific origin
+                sysdig-runtime-alert:
+                  type: number
+                  description: The total images that has this specific origin
+                sysdig-inline-scanner:
+                  type: number
+                  description: The total images that has this specific origin
+                sysdig-node-image-analyzer:
+                  type: number
+                  description: The total images that has this specific origin
+                sysdig-admission-controller:
+                  type: number
+                  description: The total images that has this specific origin
+                cicd-scan-request:
+                  type: number
+                  description: The total images that has this specific origin
+                cicd-inline-scan:
+                  type: number
+                  description: The total images that has this specific origin
+                aws-registry:
+                  type: number
+                  description: The total images that has this specific origin
+                aws-fargate:
+                  type: number
+                  description: The total images that has this specific origin
+            allRegistries:
+              type: array
+              items:
+                type: string
+                description: list of the all possible registry in all image scanned
+            allOrigins:
+              type: array
+              items:
+                type: string
+                description: list of the all possible origins in all image scanned
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              analysisStatus:
+                type: string
+                description: The current analysis status (Anchore field)
+              analyzedAt:
+                type: integer
+                description: The timestamp when analysis was comleted (Anchore field)
+              createdAt:
+                type: integer
+                description: The timestamp when the analysis request was created (Anchore field)
+              fullTag:
+                type: string
+                description: The full tag of the image including registry, repository and tag (Anchore field)
+              imageDigest:
+                type: string
+                description: The image digest (Anchore field)
+              imageId:
+                type: string
+                description: The image id (Anchore field)
+              parentDigest:
+                type: string
+                description: The parent image digest (Anchore field)
+              tagDetectedAt:
+                type: string
+                description: The timestamp when tag was detected (Anchore field)
+              registry:
+                type: string
+                description: The image registry as derived from the fullTag
+              repository:
+                type: string
+                description: The image repository as derived from the fullTag
+              tag:
+                type: string
+                description: The image tag as derived from the fullTag
+              displayRegistry:
+                type: string
+                description: The display name configured for the registry as derived from the fullTag
+              origin:
+                type: string
+                description: The image origin
+              policyStatus:
+                type: string
+                description: The image origin
+    OnboardingMetadata:
+      type: object
+      required:
+        - customerId
+        - status
+      properties:
+        customerId:
+          type: number
+          description: Id related to customer record in which these steps belong
+          example: 1
+        product:
+          type: string
+          example: SDS
+          description: provided product id to remain consistent with other monitor requests
+        status:
+          $ref: "#/components/schemas/OnboardingStatus"
+    OnboardingCompletionState:
+      type: string
+      enum:
+        - INCOMPLETE
+        - COMPLETED
+        - SKIPPED
+        - FAILED
+      example: "INCOMPLETE"
+    OnboardingStatus:
+      type: object
+      properties:
+        agentConnected:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+        k8sAuditEnabled:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+        notificationChannelLinked:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+        detectionRuleCreated:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+        inlineScanImported:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+        scanningAlertRuntimeCreated:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+        scanningAlertRepositoryCreated:
+          $ref: "#/components/schemas/OnboardingCompletionState"
+    FeedMetadata:
+      type: object
+      description: Metadata on a single feed based on what the engine finds from querying the endpoints
+      properties:
+        name:
+          type: string
+          description: name of the feed
+        created_at:
+          type: string
+          format: date-time
+          description: Date the metadata record was created in engine (first seen on source)
+        updated_at:
+          type: string
+          format: date-time
+          description: Date the metadata was last updated
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedGroupMetadata"
+        last_full_sync:
+          type: string
+          format: date-time
+    FeedGroupMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_sync:
+          type: string
+          format: date-time
+        record_count:
+          type: integer
+    ScanningError:
+      type: string
+    HostListResponse:
+      type: object
+      properties:
+        options:
+          type: object
+          properties:
+            sort:
+              type: string
+              description: The sorting method used
+            sortBy:
+              type: string
+              description: The field used to sort the result
+            filters:
+              type: string
+              description: The scopes filtered
+            offset:
+              type: integer
+              description: The start offset used
+            limit:
+              type: integer
+              description: The limit used. 0 for no limit.
+            canLoadMore:
+              type: boolean
+              description: True if more results can be fetched.
+            scope:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  value:
+                    type: string
+                  operation:
+                    type: string
+                    enum:
+                      - is
+                      - is_not
+                      - in
+                      - not_in
+        labelValues:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              hostId:
+                type: string
+              hostname:
+                type: string
+              macAddress:
+                type: string
+              cloudType:
+                type: string
+                description: the identified cloud provider
+                enum:
+                  - AWS
+                  - NONE
+              labels:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    key:
+                      type: string
+                    value:
+                      type: string
+              stopped:
+                type: boolean
+              lastScanDate:
+                type: string
+                format: date-time
+              clusterName:
+                type: string
+    HostScanReport:
+      type: object
+      properties:
+        hostId:
+          type: string
+        hostTag:
+          type: string
+        hostTags:
+          type: array
+          items:
+            type: string
+            description: list of possible tags for the host (latest, previous)
+        hostname:
+          type: string
+        lastScanDate:
+          type: string
+          format: date-time
+        clusterName:
+          type: string
+        operatingSystem:
+          type: string
+        osVersion:
+          type: string
+        macAddress:
+          type: string
+        vulnsCount:
+          type: integer
+        options:
+          type: object
+          properties:
+            vtype:
+              type: string
+              description: The type of vulnerabilities retrieved
+            filter:
+              type: string
+              description: The filter used
+            sort:
+              type: string
+              description: The sorting method used
+            sortBy:
+              type: string
+              description: The field used to sort the result
+            hasFix:
+              type: boolean
+              description: Wether only vulns with a fix have been retrieved
+            filters:
+              type: string
+              description: The severities retrieved
+            offset:
+              type: integer
+              description: The start offset used
+            limit:
+              type: integer
+              description: The limit used. 0 for no limit.
+            canLoadMore:
+              type: boolean
+              description: True if more results can be fetched.
+        vulnerabilities:
+          type: array
+          items:
+            type: object
+            description: Anchore Vulnerability object.
+            properties:
+              feed:
+                type: string
+                description: |
+                  The feed type
+                example: "vulnerabilities"
+              feed_group:
+                type: string
+                description: |
+                  The distribution group name
+                example: "debian:10"
+              fix:
+                type: string
+                description: |
+                  If exists, the fix version
+                example: "None"
+              nvd_data:
+                type: array
+                items:
+                  type: object
+                  description: Anchore nvd_data object
+              package:
+                type: string
+                description: |
+                  The package full name
+                example: "gcc-8-base-8.3.0-6"
+              package_cpe:
+                type: string
+                example: "None"
+              package_name:
+                type: string
+                description: |
+                  The package name
+                example: "gcc-8-base"
+              package_path:
+                type: string
+                description: |
+                  The package path
+                example: "pkgdb"
+              package_type:
+                type: string
+                description: |
+                  The package type
+                example: "dpkg"
+              severity:
+                type: string
+                description: |
+                  The vulnerability severity level
+                example: "Medium"
+              url:
+                type: string
+                description: |
+                  URL to full description of the vulnerability
+                example: "https://security-tracker.debian.org/tracker/CVE-2018-12886"
+              vuln:
+                type: string
+                description: |
+                  The vulnerability identifier
+                example: "CVE-2018-12886"
+        difference:
+          type: object
+          properties:
+            resolvedCount:
+              type: integer
+            addedCount:
+              type: integer
+            sharedCount:
+              type: integer
+            vulnerabilities:
+              type: array
+              items:
+                type: object
+                description: Anchore Vulnerability object.
+                properties:
+                  feed:
+                    type: string
+                    description: |
+                      The feed type
+                    example: "vulnerabilities"
+                  feed_group:
+                    type: string
+                    description: |
+                      The distribution group name
+                    example: "debian:10"
+                  fix:
+                    type: string
+                    description: |
+                      If exists, the fix version
+                    example: "None"
+                  nvd_data:
+                    type: array
+                    items:
+                      type: object
+                      description: Anchore nvd_data object
+                  package:
+                    type: string
+                    description: |
+                      The package full name
+                    example: "gcc-8-base-8.3.0-6"
+                  package_cpe:
+                    type: string
+                    example: "None"
+                  package_name:
+                    type: string
+                    description: |
+                      The package name
+                    example: "gcc-8-base"
+                  package_path:
+                    type: string
+                    description: |
+                      The package path
+                    example: "pkgdb"
+                  package_type:
+                    type: string
+                    description: |
+                      The package type
+                    example: "dpkg"
+                  severity:
+                    type: string
+                    description: |
+                      The vulnerability severity level
+                    example: "Medium"
+                  url:
+                    type: string
+                    description: |
+                      URL to full description of the vulnerability
+                    example: "https://security-tracker.debian.org/tracker/CVE-2018-12886"
+                  vuln:
+                    type: string
+                    description: |
+                      The vulnerability identifier
+                    example: "CVE-2018-12886"
+                  cmp:
+                    type: string
+                    description: compare result (New,Fixed,Shared)
+    HostContent:
+      type: object
+      properties:
+        hostId:
+          type: string
+        ctype:
+          type: string
+          description: The type of content retrieved
+        filter:
+          type: string
+          description: The filter used
+        sort:
+          type: string
+          description: The sorting method used
+        sortBy:
+          type: string
+          description: The field used to sort the result
+        offset:
+          type: integer
+          description: The start offset used
+        limit:
+          type: integer
+          description: The limit used. 0 for no limit.
+        canLoadMore:
+          type: boolean
+          description: True if more results can be fetched.
+        content:
+          type: array
+          items:
+            type: object
+            description: >-
+              Anchore Content{Package,Files,JAVA}Response.Content entry
+              object
+          description: The content retrieved
+    HostListRequest:
+      type: object
+      properties:
+        scope:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              value:
+                type: string
+              operation:
+                type: string
+                enum:
+                  - is
+                  - is_not
+                  - in
+                  - not_in
+                  - contains
+                  - contains_not
+                  - starts_with

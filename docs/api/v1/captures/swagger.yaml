@@ -1,0 +1,513 @@
+openapi: 3.0.0
+info:
+  title: Captures API
+  description: API for Captures
+  version: v1
+
+paths:
+  /api/v1/captures:
+    get:
+      summary: Retrieve the list of captures
+      description: Retrieve the list of captures
+      tags:
+        - Captures
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Represents the id of a particular capture. Can be used multiple times in the same request to fetch multiple captures
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Indicates the distance between the true starting point and the index of the first returned capture
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/SortableCaptureFields'
+        - name: dir
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Direction'
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Unix time of when to start looking for captures in microseconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Unix time of when to stop looking for captures in microseconds
+        - name: source
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AppEnum'
+        - name: scopeFilter
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Limit the results to only captures matching a scope expression
+          example: "kubernetes.cluster.name != null"
+        - name: metrics
+          in: query
+          required: false
+          schema:
+            type: string
+          example: ["host.mac","host.hostName","container.id","container.name","container.image"]
+        - name: aggregations
+          in: query
+          required: false
+          schema:
+            type: string
+          example: ["host.mac","host.hostName","container.id","container.name","container.image"]
+        - name: forceSync
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: annotations
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Uniquely identifies a capture and correlates the capture to a request. Must match the following regex ([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}
+          example: 960d9da0-cc79-4079-932a-544e193ab385        
+
+      responses:
+        200:
+          description: The array representing the captures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetCapturesResponse"
+        400:
+          description: Indicates a query param was invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+    post:
+      summary: Create a capture
+      description: Create a capture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCapture"
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully created a capture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptureWrapper"
+        400:
+          description: Indicates the request body was invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+    delete:
+      summary: Delete captures
+      description: Delete captures
+      parameters:
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Represents the id of a particular capture. Can be used multiple times in the same request to delete multiple captures
+        - name: source
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AppEnum'
+          description: Indicates that only captures belonging to either the monitor or secure product should be considered for deletion. Defaults to SDC if not specified
+        - name: statuses
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CaptureStatus'
+          description: Indicates that only captures with a particular status should be considered for deletion. Can be used multiple times in the same request
+      tags:
+        - Captures
+      responses:
+        200:
+          description: The number of captures deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteCapturesResponse"
+  /api/v1/captures/{captureId}:
+    get:
+      summary: Get a capture
+      description: Get a capture
+      parameters:
+        - name: captureId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully retrieved a capture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptureWrapper"
+        404:
+          description: The capture could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundResponse"
+    put:
+      summary: Update a capture
+      description: Update a capture
+      parameters:
+        - name: captureId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Capture"
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully updated a capture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Capture"
+        400:
+          description: Indicates the request body was invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+  /api/v1/captures/{captureId}/download:
+    get:
+      summary: Download a capture
+      description: Download a capture
+      parameters:
+        - name: captureId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Captures
+      responses:
+        302:
+          description: Redirects to a location for downloading
+        404:
+          description: The capture could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundResponse"
+  /api/v1/captures/{captureId}/stop:
+    post:
+      summary: Stop a capture
+      description: Stop a capture
+      parameters:
+        - name: captureId
+          in: path
+          required: true
+          schema:
+            type: integer
+      tags:
+        - Captures
+      responses:
+        200:
+          description: Successfully stopped the capture
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptureWrapper"
+        404:
+          description: The capture could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundResponse"
+  
+components:
+  schemas:
+    SortableCaptureFields:
+      type: string
+      description: An enum of allowable fields to sort a list of captures
+      enum:
+        - date_requested
+        - duration
+        - name
+        - size
+        - status
+    Direction:
+      type: string
+      description: An enum of ways to order a sorted collection of values
+      enum:
+        - asc
+        - desc
+    AppEnum:
+      type: string
+      description: An enum of Sysdig products
+      enum:
+        - sdc
+        - sds
+    CaptureStorageType:
+      type: string
+      description: An enum of the different types of storage to which captures can be saved
+      enum:
+        - local
+        - s3  # a customer specific s3 bucket in contrast to provided
+        - agent
+        - provided # the default Sysdig provided s3 bucket
+        - cassandra
+    CaptureStatus:
+      type: string
+      description: An enum of the different statuses a capture can have
+      enum:
+        - requested
+        - filtering
+        - capturing
+        - done
+        - error
+        - uploading
+        - uploadingError
+        - uploaded
+    Agent:
+      type: object
+      description: Describes a Sysdig agent running on a machine
+      properties:
+        customer:
+          type: integer
+          description: The ID of a particular customer
+        id:
+          type: integer
+          description: Uniquely identifies an agent
+          example: 34688
+        machineId:
+          type: string
+          description: Uniquely identifies a machine
+          example: 12:dd:fe:e0:17:0b
+        hostName:
+          type: string
+          description: The name of the host the agent is running on
+          example: ip-10-2-157-201
+        attributes:
+          type: object
+          additionalProperties: true
+
+    CreateCapture:
+      type: object
+      description: Metadata to create a capture
+      properties:
+        source:
+          $ref: '#/components/schemas/AppEnum'
+        name:
+          type: string
+          description: A way to reference a capture. Must not be empty
+          example: my_capture.scap
+        duration:
+          type: integer
+          description: The range in time from when the capture began to when it ended in seconds. The maximum value is 86400
+          example: 30
+        containerId:
+          type: integer
+          description: Uniquely identifies a container
+          example: 8883164eb9bf
+        bucketName:
+          type: string
+          description: The name of the s3 bucket to which the capture will be saved. May be null
+        folder:
+          type: string
+          description: The name of a folder in an s3 bucket
+          example: "/"
+        annotations:
+          type: object
+          description: A map of assorted metadata
+          additionalProperties: true
+        filters:
+          type: string
+          description: A way to only capture a subset of the data
+          example: "proc.name=vi"
+        agent:
+          $ref: '#/components/schemas/Agent'
+    Capture:
+      allOf:
+        - $ref: '#/components/schemas/CreateCapture'
+        - description: Contains system calls and other operating system events
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: uniquely identifies the capture
+              example: 1327048
+            maxSize:
+              type: integer
+              description: The maximum number of bytes allowed to be in this capture
+              example: 104857600
+            pastDuration:
+              type: integer
+              description: The range in time from when the capture began to when the event that triggered the capture occurred in seconds. The maximum value is 86400
+              example: 3
+            pastSize:
+              type: integer
+              description: The amount of bytes in the capture that occurred in the pastDuration interval
+            dateRequested:
+              type: integer
+              description: The unix timestamp of when the capture was requested in milliseconds
+              example: 1625783854265
+            dateReceived:
+              type: integer
+              description: The unx timestamp of when the Sysdig backend received the capture from the agent in milliseconds
+              example: 1625783881254
+            downloadUrl:
+              type: string
+              description: The url to download the capture
+              example: /api/v1/captures/1327048/download
+            size:
+              type: integer
+              description: The number of bytes in the capture
+              example: 87335540
+            type:
+              $ref: '#/components/schemas/CaptureStorageType'
+            status:
+              $ref: '#/components/schemas/CaptureStatus'
+            accessKey:
+              type: string
+              description: The key that allows an agent to communicate with a collector
+            bytesReceived:
+              type: integer
+              description: The number of bytes the Sysdig backend has received from the agent
+              example: 87335540
+            bytesStored:
+              type: integer
+              description: The number of bytes the Sysdig backend has pushed to a storage provider
+              example: 87335540
+            token:
+              type: string
+              description: Uniquely identifies a capture and correlates the capture to a request. Must match the following regex ([a-z0-9]){8}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){4}-([a-z0-9]){12}
+              example: 960d9da0-cc79-4079-932a-544e193ab385
+            metrics:
+              type: array
+              description: A list of metrics
+              items:
+                type: string
+            storageId:
+              type: integer
+              description: Uniquely identifies a storage configuration
+              example: 153
+            scope:
+              type: string
+              description: A scope expression that limits where the capture could have been taken
+              example: host.hostName = 'ip-10-2-157-201'
+            machineId:
+              type: string
+              description: Uniquely identifies a machine
+              example: 12:dd:fe:e0:17:0b
+    CaptureWrapper:
+      type: object
+      properties:
+        capture:
+          $ref: '#/components/schemas/Capture'
+
+    GetCapturesResponse:
+      type: object
+      description: A list of captures and associated metadata
+      properties:
+        total:
+          type: integer
+          description: Indicates how many captures would have been returned if no limit query param was specified. It does not represent the number of captures returned in the request.
+        captures:
+          type: array
+          items:
+            $ref: "#/components/schemas/Capture"
+        offset:
+          type: integer
+          description: Indicates the distance between the true starting point and the index of the first returned capture. Corresponds to the offset query param that was provided in the original request.
+        canLoadMore:
+          type: boolean
+          description: Indicates whether the number of captures returned had some limit applied
+
+    DeleteCapturesResponse:
+      type: object
+      properties:
+        deleted:
+          type: integer
+      required:
+        - deleted
+      additionalProperties:
+        type: string
+
+    BadRequestResponse:
+      type: object
+      description: Details on why the request was invalid
+      properties:
+        errors:
+          type: array
+          description: A list of errors
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+                description: Explains why the request was rejected
+                example: Value for parameter 'dir' is not supported
+              reason:
+                type: string
+                description: Describes the http status code
+                example: Bad Request
+    NotFoundResponse:
+      type: object
+      description: Details on why the object could not be found
+      properties:
+        timestamp:
+          type: integer
+        status:
+          type: integer
+          description: The http status
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+          description: The path used by the corresponding request

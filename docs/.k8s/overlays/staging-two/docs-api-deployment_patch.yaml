@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: docs-api
+          env:
+            - name: MONITOR_BACKEND_ENDPOINT
+              value: http://sysdig-api.staging2.svc.cluster.local

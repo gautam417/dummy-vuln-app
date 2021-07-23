@@ -1,0 +1,565 @@
+openapi: 3.0.0
+info:
+  title: Rapid Response Secure API
+  description: API for Rapid Response service
+
+paths:
+  /api/rapidresponse/v1/status:
+    get:
+      summary: Status endpoint.
+      tags:
+        - Rapid Response
+      responses:
+        200:
+          description: The service is available.
+        404:
+          description: The service is unavailable.
+        503:
+          description: The service is unavailable.
+
+  /api/rapidresponse/v1/sessions:
+    post:
+      summary: Start a rapid response sessions.
+      description: |
+        Starts a rapid response session on the given host.
+      tags:
+        - Rapid Response
+      requestBody:
+        description: The content of the create session request.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createSessionRequest"
+      responses:
+        200:
+          description: The session created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createSessionResponse"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+    get:
+      summary: Get the list of sessions performed by the logged in user.
+      tags:
+        - Rapid Response
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: number
+            format: int64
+            minimum: 0
+          required: false
+          description: The sessions of the given user will be returned.
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            format: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            format: integer
+            minimum: 0
+            maximum: 200
+            default: 50
+      responses:
+        200:
+          description: The list of sessions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sessionsResponse"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/sessions/{sessionId}/validate:
+    post:
+      summary: Validate a rapid response session using 2fa.
+      parameters:
+        - in: path
+          name: sessionId
+          schema:
+            type: string
+          required: true
+          description: The session ID.
+      tags:
+        - Rapid Response
+      requestBody:
+        description: The content of the validate session request.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/validateSessionRequest"
+      responses:
+        201:
+          description: The session created.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: The WS endpoint url.
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/sessions/{sessionId}/download:
+    get:
+      summary: Download a rapid response session.
+      parameters:
+        - in: path
+          name: sessionId
+          schema:
+            type: string
+          required: true
+          description: The session ID.
+      tags:
+        - Rapid Response
+      responses:
+        302:
+          description: No content.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: The session download url.
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/sessions/{sessionId}:
+    delete:
+      summary: Force close the session.
+      parameters:
+        - in: path
+          name: sessionId
+          schema:
+            type: string
+          required: true
+          description: The session ID.
+      tags:
+        - Rapid Response
+      responses:
+        204:
+          description: The session was killed successfully..
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/hosts:
+    get:
+      summary: Get the list of hosts for rapid response.
+      tags:
+        - Rapid Response
+      responses:
+        200:
+          description: The list of host.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/hostsResponse"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/hosts/{hostId}:
+    get:
+      summary: Get the host info for rapid response.
+      parameters:
+        - in: path
+          name: hostId
+          schema:
+            type: string
+          required: true
+          description: The host ID.
+      tags:
+        - Rapid Response
+      responses:
+        200:
+          description: The host.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/host"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/enabled:
+    get:
+      summary: Get if the customer is enabled to use rapid response.
+      tags:
+        - Rapid Response
+      responses:
+        200:
+          description: The information on the enabled/disabled state for the customer is successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/enabledResponse"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+  /api/rapidresponse/v1/admin/settings/{customerId}:
+    get:
+      summary: Get the settings associated to a given customerId.
+      parameters:
+        - in: path
+          name: customerId
+          schema:
+            type: integer
+          required: true
+          description: The number identifying the customer.
+      tags:
+        - Rapid Response
+      responses:
+        200:
+          description: The settings are successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/settings"
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+    put:
+      summary: Modify the settings associated to a given customerId.
+      parameters:
+        - in: path
+          name: customerId
+          schema:
+            type: integer
+          required: true
+          description: The number identifying the customer.
+      tags:
+        - Rapid Response
+      responses:
+        204:
+          description: The settings are successfully modified.
+        400:
+          $ref: "#/components/responses/badRequest"
+        401:
+          $ref: "#/components/responses/unauthorized"
+        403:
+          $ref: "#/components/responses/forbidden"
+        404:
+          $ref: "#/components/responses/notFound"
+        500:
+          $ref: "#/components/responses/internalServerError"
+        default:
+          $ref: "#/components/responses/internalServerError"
+
+components:
+  responses:
+    badRequest:
+      description: The request is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorResponse"
+    forbidden:
+      description: Missing authorization to perform request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorResponse"
+    notFound:
+      description: Thre requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorResponse"
+    unauthorized:
+      description: Unauthorized request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorResponse"
+    internalServerError:
+      description: |
+        The server encountered an unexpected condition that prevented it from
+        fulfilling the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/errorResponse"
+  schemas:
+    createSessionRequest:
+      type: object
+      required:
+        - host
+      properties:
+        host:
+          type: string
+          description: The host where where to open the shell.
+    createSessionResponse:
+      type: object
+      required:
+        - sessionId
+      properties:
+        sessionId:
+          type: string
+          description: The Id of the session.
+    validateSessionRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: The 2fa code.
+    sessionsResponse:
+      type: object
+      required:
+        - sessions
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/session"
+    hostsResponse:
+      type: object
+      required:
+        - hosts
+      properties:
+        hosts:
+          type: array
+          items:
+            $ref: "#/components/schemas/host"
+    host:
+      type: object
+      required:
+        - host
+        - hostname
+        - lastSeen
+      properties:
+        host:
+          type: string
+          description: The host identification.
+        hostname:
+          type: string
+          description: Name of the host.
+        lastSeen:
+          type: string
+          format: date-time
+          description: Timestamp host was seen for the last time.
+          example: "2020-04-21T16:08:08.845336507Z"
+    session:
+      type: object
+      required:
+        - sessionId
+        - userId
+        - username
+        - teamId
+        - teamName
+        - hostId
+        - hostname
+        - startTime
+        - status
+      properties:
+        sessionId:
+          type: number
+          description: The session ID.
+        userId:
+          type: number
+          description: The user ID.
+        username:
+          type: string
+          description: The username.
+        teamId:
+          type: number
+          description: The team ID.
+        teamName:
+          type: string
+          description: The team name.
+        hostId:
+          type: string
+          description: The host ID.
+        hostname:
+          type: string
+          description: The hostname.
+        startTime:
+          type: string
+          format: date-time
+          description: The timestamp the connection was established.
+          example: "2020-04-21T16:08:08.845336507Z"
+        endTime:
+          type: string
+          format: date-time
+          description: The timestamp the connection was closed.
+          example: "2020-04-21T16:08:08.845336507Z"
+        status:
+          type: string
+          enum: [ active, closed ]
+          description: The status of the session.
+        archived:
+          type: boolean
+          example: true
+          default: false
+          description: Indicates if the session dump was archived or not.
+    errorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/error"
+    error:
+      type: object
+      description: The error object.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: The error code.
+          example: bad_arg
+        message:
+          type: string
+          description: A human-readable representation of the error.
+          example: Multiple errors in ContactInfo data.
+        target:
+          type: string
+          description: The target of the error.
+        details:
+          type: array
+          description: An array of details about specific errors that led to this reported error.
+          items:
+            $ref: "#/components/schemas/errorDetails"
+    errorDetails:
+      type: object
+      description: An object containing more specific information than the current object about the error.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: The inner error code.
+          example: bad_arg
+        message:
+          type: string
+          description: A human-readable representation of the error.
+          example: Multiple errors in ContactInfo data.
+    settings:
+      type: object
+      description: An object containing the settings associated to a customer.
+      required:
+        - customer_id
+        - enabled
+      properties:
+        customer_id:
+          type: integer
+          description: The number identifying the customer.
+          example: 1234
+        enabled:
+          type: boolean
+          description: The information whether the customer is enabled to use rapid response.
+          example: true
+    enabledResponse:
+      type: object
+      description: An object containing the settings associated to a customer, given the customer_id in the request.
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: The information whether the customer is enabled to use rapid response.
+          example: true
+
+  tags:
+    RapidResponse:
+      name: Rapid Response
+      description: |
+        The Rapid Response API returns data related to the rapid response functionality.

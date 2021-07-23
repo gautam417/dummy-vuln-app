@@ -1,0 +1,327 @@
+openapi: 3.0.0
+paths:
+  /api/v1/secure/overview/status:
+    get:
+      summary: Check status of overview service.
+      description: Checks whether the overview service is available or not.
+      tags: [ "Overview" ]
+      responses:
+        200:
+          description: Successfully returned status of overview service.
+          content:
+            application/json:
+              schema:
+                type: "object"
+        401:
+          description: >
+            Status Unauthorized: Returned when user is not authorized
+        403:
+          description: >
+            Status Forbidden: Returned when Overview V2 is disabled
+  /api/v1/secure/overview:
+    get:
+      summary: Datasource for the Secure Overview page.
+      description: Fetches overview data for a specified set of panels of the Secure Overview page. Customer ID is derived from API key.
+      tags: [ "Overview" ]
+      parameters:
+        - $ref: "#/components/parameters/panel"
+        - $ref: "#/components/parameters/timeframe"
+        - $ref: "#/components/parameters/cluster"
+        - $ref: "#/components/parameters/namespace"
+      responses:
+        200:
+          description: Successfully returned overview data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewResponse"
+        400:
+          description: Returned if panel, cluster or namespace are invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewError"
+        401:
+          description: Invalid or missing auth token
+        404:
+          description: No record found for customerId
+components:
+  parameters:
+    panel:
+      name: panel
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - buildtimeScanResults
+          - buildtimeCveSeverity
+          - runtimeScanResults
+          - runtimeCveSeverity
+          - policyEvents
+          - benchmarks
+      description: Comma seperated string of panel(s) for which to fetch metrics. Defaults to all panels if omitted.
+      example: buildtimeScanResults,runtimeScanResults,benchmarks
+    timeframe:
+      name: timeframe
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - instant
+          - range
+      description: >-
+        Type of data to return. Either instant (Donut graphs) or range (Trend graphs). Defaults to both if omitted.
+        If range data is included, a constant timeframe will be returned for all range data in the response, with a
+        length of 90 days, or the number of days since customer creation, whichever is smaller.
+    cluster:
+      name: cluster
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        Cluster name (Applies to runtimeScanResults and runtimeCveSeverity). Can be set to `non-k8s` to get data not
+        associated with a kubernetes cluster (e.g. locally run Docker images. Omit to include all data (both k8s and
+        non-k8s)
+    namespace:
+      name: namespace
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        Namespace name (Applies to runtimeScanResults and runtimeCveSeverity). Only available if `cluster` is set and
+        valid. Omit to include all namespaces.
+  schemas:
+    OverviewError:
+      type: object
+      properties:
+        message:
+          type: string
+          description: a human-readable description of the error
+          example: "startDate cannot be more than 90 days earlier than endDate"
+    OverviewResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/OverviewData"
+        time:
+          $ref: "#/components/schemas/OverviewTime"
+    OverviewData:
+      type: object
+      properties:
+        buildtimeScanResults:
+          $ref: "#/components/schemas/OverviewBuildtimeScanResultsData"
+        buildtimeCveSeverity:
+          $ref: "#/components/schemas/OverviewBuildtimeCveSeverityData"
+        runtimeScanResults:
+          $ref: "#/components/schemas/OverviewRuntimeScanResultsData"
+        runtimeCveSeverity:
+          $ref: "#/components/schemas/OverviewRuntimeCveSeverityData"
+        policyEvents:
+          $ref: "#/components/schemas/OverviewPolicyEventsData"
+        benchmarks:
+          $ref: "#/components/schemas/OverviewBenchmarksData"
+    OverviewTime:
+      type: object
+      properties:
+        from:
+          type: number
+          format: integer
+          description: the earliest date in all returned timeseries as a unix timestamp in ms.
+          example: 1588801177000
+        to:
+          type: number
+          format: integer
+          description: the last date in the all returned timeseries as a unix timestamp in ms.
+          example: 1588883737000
+        sampling:
+          type: number
+          format: integer
+          description: the step size between subsequent datapoints in a timeseries in ms.
+          example: 960000
+    OverviewBuildtimeScanResultsData:
+      type: object
+      properties:
+        instant:
+          type: object
+          properties:
+            pass:
+              $ref: "#/components/schemas/Instant"
+            fail:
+              $ref: "#/components/schemas/Instant"
+        range:
+          type: object
+          properties:
+            pass:
+              $ref: "#/components/schemas/RangeVector"
+            fail:
+              $ref: "#/components/schemas/RangeVector"
+        warnings:
+          $ref: "#/components/schemas/Warnings"
+        errors:
+          $ref: "#/components/schemas/Errors"
+    OverviewBuildtimeCveSeverityData:
+      type: object
+      properties:
+        instant:
+          type: object
+          properties:
+            critical:
+              $ref: "#/components/schemas/Instant"
+            high:
+              $ref: "#/components/schemas/Instant"
+            medium:
+              $ref: "#/components/schemas/Instant"
+            low:
+              $ref: "#/components/schemas/Instant"
+        range:
+          type: object
+          properties:
+            critical:
+              $ref: "#/components/schemas/RangeVector"
+            high:
+              $ref: "#/components/schemas/RangeVector"
+            medium:
+              $ref: "#/components/schemas/RangeVector"
+            low:
+              $ref: "#/components/schemas/RangeVector"
+        warnings:
+          $ref: "#/components/schemas/Warnings"
+        errors:
+          $ref: "#/components/schemas/Errors"
+    OverviewRuntimeScanResultsData:
+      type: object
+      properties:
+        instant:
+          type: object
+          properties:
+            pass:
+              $ref: "#/components/schemas/Instant"
+            fail:
+              $ref: "#/components/schemas/Instant"
+            unscanned:
+              $ref: "#/components/schemas/Instant"
+        range:
+          type: object
+          properties:
+            pass:
+              $ref: "#/components/schemas/RangeVector"
+            fail:
+              $ref: "#/components/schemas/RangeVector"
+            unscanned:
+              $ref: "#/components/schemas/RangeVector"
+        warnings:
+          $ref: "#/components/schemas/Warnings"
+        errors:
+          $ref: "#/components/schemas/Errors"
+    OverviewRuntimeCveSeverityData:
+      type: object
+      properties:
+        instant:
+          type: object
+          properties:
+            critical:
+              $ref: "#/components/schemas/Instant"
+            high:
+              $ref: "#/components/schemas/Instant"
+            medium:
+              $ref: "#/components/schemas/Instant"
+            low:
+              $ref: "#/components/schemas/Instant"
+        range:
+          type: object
+          properties:
+            critical:
+              $ref: "#/components/schemas/RangeVector"
+            high:
+              $ref: "#/components/schemas/RangeVector"
+            medium:
+              $ref: "#/components/schemas/RangeVector"
+            low:
+              $ref: "#/components/schemas/RangeVector"
+        warnings:
+          $ref: "#/components/schemas/Warnings"
+        errors:
+          $ref: "#/components/schemas/Errors"
+    OverviewPolicyEventsData:
+      type: object
+      properties:
+        instant:
+          type: object
+          properties:
+            high:
+              $ref: "#/components/schemas/Instant"
+            medium:
+              $ref: "#/components/schemas/Instant"
+            low:
+              $ref: "#/components/schemas/Instant"
+            information:
+              $ref: "#/components/schemas/Instant"
+        range:
+          type: object
+          properties:
+            high:
+              $ref: "#/components/schemas/RangeVector"
+            medium:
+              $ref: "#/components/schemas/RangeVector"
+            low:
+              $ref: "#/components/schemas/RangeVector"
+            information:
+              $ref: "#/components/schemas/RangeVector"
+        warnings:
+          $ref: "#/components/schemas/Warnings"
+        errors:
+          $ref: "#/components/schemas/Errors"
+    OverviewBenchmarksData:
+      type: object
+      properties:
+        instant:
+          type: object
+          properties:
+            docker:
+              $ref: "#/components/schemas/Instant"
+            kubernetes:
+              $ref: "#/components/schemas/Instant"
+            linux:
+              $ref: "#/components/schemas/Instant"
+        range:
+          type: object
+          properties:
+            docker:
+              $ref: "#/components/schemas/RangeVector"
+            kubernetes:
+              $ref: "#/components/schemas/RangeVector"
+            linux:
+              $ref: "#/components/schemas/RangeVector"
+    Instant:
+      type: array
+      items:
+        type: number
+        format: integer
+      description: >-
+        An array of two numbers representing a metric, where the first number is the unix timestamp in ms, and the second
+        number is the metric value.
+      example:
+        - 1554508800
+        - 32
+    RangeVector:
+      type: array
+      items:
+        $ref: "#/components/schemas/Instant"
+      description: An array of Instant objects representing a metric over a given time frame.
+      example:
+        - - 1554508800
+          - 34
+        - - 1586451864
+          - 3
+    Warnings:
+      type: array
+      items:
+        type: string
+    Errors:
+      type: array
+      items:
+        type: string

@@ -1,0 +1,8 @@
+namespace: api-docs
+
+bases:
+- ../../base/
+
+patches:
+- docs-api-deployment_patch.yaml
+- docs-api-ingress_patch.yaml

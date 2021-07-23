@@ -1,0 +1,36 @@
+{{- if and (contains "secure" .Values.apps) (.Values.sysdig.secure.apiDocs.enabled) }}
+{{- if and (eq .Values.deployment "iks") (ne .Values.sysdig.ingressNetworking "external") }}
+{{- if .Values.sysdig.iks.nginxIngressEnabled -}}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sysdigcloud-api-docs-public
+  namespace: {{ .Values.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: public-iks-k8s-nginx
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "True"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "86400"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "86400"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Private-Endpoint false;
+spec:
+  rules:
+  - host: {{ .Values.sysdig.dnsName }}
+    http:
+      paths:
+        - backend:
+            serviceName: sysdigcloud-api-docs
+            servicePort: 80
+          path: /api/docs/secure
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - {{ .Values.sysdig.dnsName }}
+      secretName: sysdigcloud-ssl-secret
+{{- end -}}
+{{- end }}
+{{- end }}

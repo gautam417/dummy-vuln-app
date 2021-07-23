@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: docs-api-ingress
+  labels:
+    app: docs
+    role: docs-api-ingress
+    tier: infra
+    app.kubernetes.io/name: ingress-config
+    app.kubernetes.io/part-of: sysdigcloud
+    app.kubernetes.io/managed-by: ingress-config
+  annotations:
+    ingress.kubernetes.io/config-backend: |
+      timeout server 10m

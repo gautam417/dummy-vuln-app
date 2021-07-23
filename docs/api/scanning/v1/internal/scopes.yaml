@@ -1,0 +1,132 @@
+openapi: 3.0.0
+info:
+  title: Scanning Secure API
+  description: API for Sysdig Secure Scanning service
+  version: "v1"
+paths:
+  /api/scanning/v1/scopes:
+    get:
+      summary: >-
+        Checks if Team Static Scopes are available
+      description: >-
+        Returns HTTP 200 if the feature is enabled for the given customer, 403
+        otherwise.
+      tags:
+        - Scanning
+      responses:
+        200:
+          description: Feature enabled for customer
+        403:
+          description: Feature not enabled for customer
+
+  /api/scanning/v1/scopes/{teamId}:
+    get:
+      summary: >-
+        Retrieves Team Static Scopes
+      description: >-
+        Retrieves a set of filters to be applied to scan results on a per-team
+        basis.
+      parameters:
+        - name: teamId
+          in: path
+          description: The target Team
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        200:
+          description: The filter set and whether they're enabled or not
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningTeamStaticScope"
+        403:
+          description: Feature not enabled for customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Feature not enabled"
+    delete:
+      summary: >-
+        Deletes Team Static Scopes
+      description: >-
+        Deletes a set of filters to be applied to scan results on a per-team
+        basis.
+      parameters:
+        - name: teamId
+          in: path
+          description: The target Team
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        200:
+          description: The filter was succesfully deleted
+        403:
+          description: Feature not enabled for customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Feature not enabled"
+    put:
+      summary: >-
+        Creates or Updates Team Static Scope
+      description: >-
+        Creates set of filters to be applied to scan results on a per-team basis
+        or Updates an existing one, completely replacing the previous filters
+        with the specified ones.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanningTeamStaticScope"
+      parameters:
+        - name: teamId
+          in: path
+          description: The target Team
+          required: true
+          schema:
+            type: string
+      tags:
+        - Scanning
+      responses:
+        204:
+          description: Per-team filters are updated/created
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Bad request"
+        403:
+          description: Feature not enabled for customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanningError"
+              example: "Feature not enabled"
+
+components:
+  schemas:
+    ScanningTeamStaticScope:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the filter is enabled or not
+        scopes:
+          type: array
+          description: The array of prefixes to be use as filters for the team
+          items:
+            type: string
+            description: The prefix of an image name
+    ScanningError:
+      type: string

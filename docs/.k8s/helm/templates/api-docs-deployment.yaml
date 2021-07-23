@@ -1,0 +1,90 @@
+{{- if and (contains "secure" .Values.apps) (.Values.sysdig.secure.apiDocs.enabled) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sysdigcloud-api-docs
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sysdigcloud
+    role: api-docs
+  annotations:
+    version: {{ .Chart.Version }}
+spec:
+  replicas: {{ .Values.sysdig.apiDocsReplicaCount }}
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 10
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: sysdigcloud
+      role: api-docs
+  template:
+    metadata:
+      labels:
+        app: sysdigcloud
+        role: api-docs
+        np-object-class: sysdigcloud-api-docs
+        np-labels: applied
+    spec:
+      serviceAccountName: sysdig
+      {{- if .Values.sysdig.tolerations }}
+      {{- $first := true }}
+      tolerations:
+        {{- range $idx, $toleration := .Values.sysdig.tolerations }}
+        {{- range $key, $value := $toleration }}
+        {{- if $first }}
+        - {{ $key }}: {{ $value }}
+        {{- else }}
+          {{ $key }}: {{ $value }}
+        {{- end }}
+        {{ $first = false }}
+        {{- end }}
+        {{- $first = true }}
+        {{- end }}
+      {{- end }}
+      affinity:
+        {{- if .Values.nodeaffinityLabel }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.nodeaffinityLabel.key }}
+                    operator: In
+                    values:
+                      - {{ .Values.nodeaffinityLabel.value }}
+        {{- end }}
+      imagePullSecrets:
+        - name: sysdigcloud-pull-secret
+      containers:
+        - name: api-docs
+          image: {{ .Values.airgapped_registry_name | default "quay.io" }}/{{ .Values.airgapped_repository_prefix }}/api-docs:{{ .Chart.Version }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 12345
+              name: api-docs
+              protocol: TCP
+          env:
+            {{- if .Values.monitor }}
+            - name: MONITOR_BACKEND_ENDPOINT
+              value: {{ .Values.monitor.endpoint | quote }}
+            - name: MONITOR_BACKEND_SKIP_TLS
+              value: {{ .Values.monitor.skipTLS | quote }}
+            {{- else }}
+            - name: MONITOR_BACKEND_ENDPOINT
+              value: "http://sysdigcloud-api:8080"
+            - name: MONITOR_BACKEND_SKIP_TLS
+              value: "false"
+            {{- end }}
+          resources:
+            limits:
+              cpu: {{ index .Values.sysdig.resources "api-docs" "limits" "cpu" | quote }}
+              memory: {{ index .Values.sysdig.resources "api-docs" "limits" "memory" }}
+            requests:
+              cpu: {{ index .Values.sysdig.resources "api-docs" "requests" "cpu" | quote }}
+              memory: {{ index .Values.sysdig.resources "api-docs" "requests" "memory" }}
+{{ end }}

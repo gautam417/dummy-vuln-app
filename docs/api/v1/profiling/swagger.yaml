@@ -1,0 +1,916 @@
+openapi: 3.0.0
+info:
+  title: Profiling API
+  description: API for Sysdig Profiling
+  version: v1
+
+paths:
+  /api/v1/profiling/profileGroups:
+    get:
+      summary: Get info about profile groups for a customer
+      description: |
+        This endpoint returns the profile groups for a customer
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: An array of profile groups for a customer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfileGroup"
+        401:
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/profiling/profileGroups/{profileGroupId}:
+    get:
+      summary: Get info about a profile group with a specific id for a customer
+      description: |
+        This endpoint returns the profile group given a id for a customer
+      parameters:
+        - $ref: "#/components/parameters/profileGroupId"
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: The profile group for the given profileGroupId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileGroup"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/profiling/profileGroups/{profileGroupId}/profiles:
+    get:
+      summary: Get all profiles for a given profileGroupId
+      description: |
+        This endpoint returns the profiles for a given profileGroupId
+      parameters:
+        - $ref: "#/components/parameters/profileGroupId"
+        - $ref: "#/components/parameters/scoreMin"
+        - $ref: "#/components/parameters/status"
+        - $ref: "#/components/parameters/filter"
+        - $ref: "#/components/parameters/sortBy"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/sortMethod"
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: The profiles for a given profileGroupId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profiles"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/profiling/profiles/{profileId}:
+    get:
+      summary: Get profile matching given profileId
+      description: |
+        This endpoint returns the profile matching a given profileId
+      parameters:
+        - $ref: "#/components/parameters/profileId"
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: The profile for a given profileId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        404:
+          $ref: '#/components/responses/NotFound'
+        500:
+          $ref: '#/components/responses/ServerError'
+  /api/v1/profiling/profiles/{profileId}/actions/reset:
+    post:
+      summary: Reset a profile given the profileId
+      description: |
+        This endpoint can be used to reset a profile given a profileId
+      parameters:
+        - $ref: "#/components/parameters/profileId"
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: The ActionsProfileResponse containing time when profile was reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileActionResetResponse"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        500:
+          $ref: '#/components/responses/ServerError'
+  /api/v1/profiling/profiles/{profileId}/actions/remove:
+    post:
+      summary: Remove a profile given the profileId
+      description: |
+        This endpoint can be used to remove a profile given a profileId
+      parameters:
+        - $ref: "#/components/parameters/profileId"
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: The ActionsProfileResponse containing time when profile was removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileActionResetResponse"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        500:
+          $ref: '#/components/responses/ServerError'
+  /api/v1/profiling/status:
+    get:
+      summary: Get status of Profiling API
+      description: |
+        This endpoint can be used to get status of Profiling API
+      tags:
+        - Profiling
+      responses:
+        200:
+          description: The ActionsProfileResponse containing time when profile was removed
+          content:
+            text/plain:
+              schema:
+                type: string
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+components:
+  parameters:
+    profileGroupId:
+      name: profileGroupId
+      in: path
+      description: The id of the profile group
+      required: true
+      schema:
+        type: integer
+    scoreMin:
+      name: scoreMin
+      in: query
+      description: >-
+        If specified, only profiles with a confidence score at least this amount will be
+        retrieved. Defaults to `0`
+      required: false
+      schema:
+        type: integer
+    status:
+      name: status
+      in: query
+      description: >-
+        A comma-separated list of statuses. If specified, only profiles with these statuses will
+        be retrieved. Defaults to `['FINALIZED','LEARNING']`
+      required: false
+      schema:
+        type: string
+        enum:
+          - FINALIZED
+          - LEARNING
+    filter:
+      name: filter
+      in: query
+      description: >-
+        If specified, filter to only include profiles where the profile name or image name
+        (registry/repository:tag@hash) contains this string. Defaults to empty string
+      required: false
+      schema:
+        type: string
+    sortBy:
+      name: sortBy
+      in: query
+      description: >-
+        Field used to sort. Defaults to `score`. Profiles with `status:'FINALIZED'` will always
+        appear above `status:'LEARNING'`, for all values of `sortBy` except
+        `sortBy:'status', sortMethod:'asc'`.
+      required: false
+      schema:
+        type: string
+        enum:
+          - score
+          - profileName
+          - status
+          - createdOn
+    limit:
+      name: limit
+      in: query
+      description: >-
+        If specified, a limit on the number of entries retrieved. If any filters are also
+        specified, the limit will be applied on the filtered list. `limit` must be >= `1` and if
+        it overflows the list all entries will be retrieved. Defaults to length of list
+      required: false
+      schema:
+        type: integer
+    offset:
+      name: offset
+      in: query
+      description: >-
+        If specified, a 0-based index on the profiles list. Only entries >= `offset` will be
+        retrieved. Defaults to `0`. If any filters are also specified, this index will be
+        applied on the filtered list. An empty list will be retrieved if this index overflows
+        the list.
+      required: false
+      schema:
+        type: integer
+    sortMethod:
+      name: sortMethod
+      in: query
+      description: Sorting method. Defaults to `desc`.
+      required: false
+      schema:
+        type: string
+        enum:
+          - desc
+          - asc
+    profileId:
+      name: profileId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Indicates a parameter, header or another quality of the request was malformed. More information about 400 can be found at https://httpstatuses.com/400
+      content:
+        text/plain:
+          schema:
+            type: string
+    Unauthorized:
+      description: The user failed to authenticate. More information about 401 can be found at https://httpstatuses.com/401
+      content:
+        text/plain:
+          schema:
+            type: string
+    Forbidden:
+      description: API Access Forbidden
+      content:
+        text/plain:
+          schema:
+            type: string
+    NotFound:
+      description: The requested resource was not found. More information about 404 can be found at https://httpstatuses.com/404
+      content:
+        text/plain:
+          schema:
+            type: string
+    ServerError:
+      description: Generic error from API
+      content:
+        text/plain:
+          schema:
+            type: string
+
+  schemas:
+    RuntimePolicyObjectOrigin:
+      type: string
+      description: A string naming the entity that created this rule. This, combined with the version identifier, corresponds to the "Published by" field in the UI. The origin should be "Secure UI" for objects created by the Secure UI, "Sysdig" for objects provided by Sysdig, and "Customer" for objects provided programmatically by the customer.
+      enum: ["Secure UI", "Sysdig", "Customer", "Profiling", "K8s Policy Advisor"]
+      example: "Secure UI"
+    RuntimePolicyObjectVersionId:
+      type: string
+      description: A string representing the version of the file that contained this rule. This, combined with the origin, corresponds to the "Published by" field in the UI. For rules with origin == Sysdig/Customer, the version identifier should come from the version property of the FalcoRulesFiles object that originally contained the rule. For rules with origin == Secure UI, the version should be a constant string "current".
+      example: "v1.2.3"
+    RuntimePolicyRulesObject:
+      type: object
+      required:
+        - id
+        - name
+        - origin
+        - versionId
+        - filename
+        - version
+        - modifiedOn
+        - createdOn
+      properties:
+        id:
+          type: integer
+          description: A unique identifier representing a specific rule
+          example: 1
+        name:
+          type: string
+          description: A name for this object. For Falco rules/macros/lists, should exactly be the value of the "rule"/"macro"/"list" property of the yaml object.
+          example: "Write Below Binary Dir"
+        origin:
+          $ref: "#/components/schemas/RuntimePolicyObjectOrigin"
+        versionId:
+          $ref: "#/components/schemas/RuntimePolicyObjectVersionId"
+        filename:
+          type: string
+          description: Name of the file in which the rule is defined. For Default Falco rules, this should come from the name property of the FalcoRulesFile object that contained this rule. For other falco rules, the filename should be "falco_rules.local.yaml". For non-falco rules, the filename should be "fast_rules.local.yaml".
+          example: "falco_rules.local.yaml"
+        version:
+          type: number
+          format: integer
+          description: The version is incremented when the update is successful.
+          example: 5
+        createdOn:
+          type: number
+          format: integer
+          description: A timestamp (in milliseconds) of when the rules object was first created.
+          example: 1553702727177
+        modifiedOn:
+          type: number
+          format: integer
+          description: A timestamp (in milliseconds) of when the rules object was last modified.
+          example: 1553702738288
+    TaggedPolicyObject:
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          type: array
+          description: The set of tags
+          items:
+            type: string
+          example: ["Kubernetes", "CIS Compliance", "File Integrity"]
+    AppendableFalcoObject:
+      type: object
+      properties:
+        append:
+          type: string
+          enum: [true, false]
+          description: If true, this object should be appended to an object with the same name that has already been loaded. Defaults to false if not present.
+          example: "true"
+    RuntimePolicyRuleType:
+      type: object
+      required:
+        - ruleType
+      properties:
+        ruleType:
+          type: string
+          description: Indicates the rule type
+          enum:
+            - PROCESS
+            - CONTAINER
+            - FILESYSTEM
+            - NETWORK
+            - SYSCALL
+            - FALCO
+          example: "FALCO"
+    FalcoConditionText:
+      type: object
+      required:
+        - conditionText
+      properties:
+        text:
+          type: string
+          description: An opaque hunk of condition text. May contain a mix of fields, relational operators, etc. Basically anything between Macro/List references.
+          example: "evt.type in (open, openat) and "
+    FalcoMacroReference:
+      type: object
+      required:
+        - falcoMacroReference
+      properties:
+        falcoMacroReference:
+          type: string
+          description: The name of a FalcoMacro object. (Intentionally using names instead of ids so it can be passed directly from falco without falco having its own notion of rule/macro/list ids).
+          example: "bin_dir"
+    FalcoListReference:
+      type: object
+      required:
+        - falcoListReference
+      properties:
+        falcoListReference:
+          type: string
+          description: The name of a FalcoList object. (Intentionally using names instead of ids so it can be passed directly from falco without falco having its own notion of rule/macro/list ids).
+          example: "monitored_directories"
+    FalcoCondition:
+      type: object
+      required:
+        - condition
+      properties:
+        condition:
+          type: object
+          required:
+            - condition
+            - components
+          properties:
+            condition:
+              type: string
+              description: the full condition text exactly as represented in the yaml file
+              example: "evt.type in (open, openat) and bin_dir and fd.name in (monitored_directories)"
+            components:
+              type: array
+              description: an array containing the broken-up components of this falco rule\'s condition field
+              items:
+                type: object
+                oneOf:
+                  - $ref: "#/components/schemas/FalcoConditionText"
+                  - $ref: "#/components/schemas/FalcoMacroReference"
+                  - $ref: "#/components/schemas/FalcoListReference"
+    FalcoSource:
+      type: string
+      description: "An event source through which Falco rules are evaluated. The enum syscall corresponds to the policy types falco and list_matching. The enum k8s_audit corresponds to the policy type k8s_audit"
+      enum:
+        - syscall
+        - k8s_audit
+        - aws_cloudtrail
+        - gcp_auditlog
+    FalcoRuleDetails:
+      allOf:
+        - $ref: "#/components/schemas/AppendableFalcoObject"
+        - $ref: "#/components/schemas/RuntimePolicyRuleType"
+        - $ref: "#/components/schemas/FalcoCondition"
+        - type: object
+          required:
+            - output
+            - priority
+          properties:
+            output:
+              type: string
+              description: A string describing the output string to generate when this rule matches an event. Should exactly match the output property of the rule\'s output field
+              example: "File below a known binary directory opened for writing (user=%user.name command=%proc.cmdline file=%fd.name)"
+            priority:
+              type: string
+              description: A string describing the falco rule\'s priority. This is only included so the resulting rule can be converted back to yaml easily. For the purposes of policy events, the policy\'s severity should be used instead of this value.
+              enum:
+                - emergency
+                - alert
+                - critical
+                - error
+                - warning
+                - notice
+                - informational
+                - debug
+              example: "error"
+            source:
+              $ref: "#/components/schemas/FalcoSource"
+    RuntimePolicyRuleList:
+      type: object
+      description: Represents a list of items and whether the list represents a set of items to match or not match
+      required:
+        - items
+        - matchItems
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+            description: the set of paths/syscalls/ports/etc.
+            example: ["/bin", "usr/bin"]
+        matchItems:
+          type: boolean
+          description: If true, the rule matches if the path/syscall/port matches one of the items in the list. If false, the rule matches if the path/syscall/port/etc does not match any of the items in the list.
+          example: true
+    ProcessRuleDetails:
+      type: object
+      required:
+        - processes
+        - ruleType
+      properties:
+        processes:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    FileSystemRuleDetails:
+      type: object
+      required:
+        - readWritePaths
+        - readPaths
+        - ruleType
+      properties:
+        readWritePaths:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        readPaths:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    SyscallRuleDetails:
+      type: object
+      required:
+        - syscalls
+        - ruleType
+      properties:
+        syscalls:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    ContainerImagesRuleDetails:
+      type: object
+      required:
+        - containers
+        - ruleType
+      properties:
+        containers:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    NetworkRuleDetails:
+      type: object
+      required:
+        - tcpListenPorts
+        - udpListenPorts
+        - allOutbound
+        - allInbound
+        - ruleType
+      properties:
+        allOutbound:
+          type: boolean
+          description: If true, then all outbound connection attempts match this rule
+          example: true
+        allInbound:
+          type: boolean
+          description: If true, then all inbound connection attempts match this rule
+          example: true
+        tcpListenPorts:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        udpListenPorts:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleList"
+        ruleType:
+          allOf:
+            - $ref: "#/components/schemas/RuntimePolicyRuleType"
+    RuntimePolicyRule:
+      allOf:
+        - $ref: "#/components/schemas/RuntimePolicyRulesObject"
+        - $ref: "#/components/schemas/TaggedPolicyObject"
+        - type: object
+          required:
+            - description
+            - details
+          properties:
+            description:
+              type: string
+              description: A description of this rule. No newlines/formatting.
+              example: "an attempt to write to any file below a set of binary directories"
+            details:
+              type: object
+              oneOf:
+                - $ref: "#/components/schemas/FalcoRuleDetails"
+                - $ref: "#/components/schemas/ProcessRuleDetails"
+                - $ref: "#/components/schemas/FileSystemRuleDetails"
+                - $ref: "#/components/schemas/SyscallRuleDetails"
+                - $ref: "#/components/schemas/ContainerImagesRuleDetails"
+                - $ref: "#/components/schemas/NetworkRuleDetails"
+    ProfileModelMeta:
+      type: object
+      required:
+        - profileId
+        - profileName
+        - profileVersion
+        - imageId
+        - imageName
+      properties:
+        profileId:
+          type: string
+          description: UUID of the profile, based on a SHA of (imageId + profileVersion).
+        profileName:
+          type: string
+          description: Name of the profile, which includes registry/repository:tag@hash.
+        profileVersion:
+          type: integer
+          description: Version of the profile, incremented when the model is updated.
+        imageId:
+          type: string
+          description: UUID of the image, based on a SHA256 of the image content.
+        imageName:
+          type: string
+          description: Name of the image, as registry/repository:tag.
+    PolicyType:
+      type: string
+      description: "A name for a non overlapping subset of policies that share common characteristics. The enums falco and list_matching correspond to the FalcoSource enum syscall, k8s_audit corresponds to k8s_audit, and the others will map to a future enum value once OSS Falco decides a name"
+      enum:
+        - falco
+        - list_matching
+        - k8s_audit
+        - aws_cloudtrail
+        - gcp_auditlog
+    StopContainerPolicyAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_STOP]
+        msg:
+          type: string
+          description: a message to send to the thing being stopped
+    CapturePolicyAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_CAPTURE]
+        filter:
+          type: string
+          description: specifies the subset to match
+          example: proc.name=cat or proc.name=vi
+        isLimitedToContainer:
+          type: boolean
+        beforeEventNs:
+          type: integer
+          description: period of time to capture before event in nanoseconds
+        afterEventNs:
+          type: integer
+          description: period of time to capture after event in nanoseconds
+        name:
+          type: string
+          description: the name of the file in which the capture will be saved
+        storageType:
+          type: string
+          description: specifies which strategy will be taken to store the capture
+          enum: [LOCAL, S3, AGENT, PROVIDED, CASSANDRA]
+        bucketName:
+          type: string
+          description: identifies an s3 compliant bucket
+        folder:
+          type: string
+          description: the name of an s3 folder (enables the user to specify a bucket that is not in the default bucket root folder '/')
+        storageId:
+          type: integer
+          description: specifies the id of a row in the file_storage table that corresponds to a FileStorageDetails.java object
+    PauseContainerPolicyAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_PAUSE]
+        msg:
+          type: string
+          description: a message to send to the thing being paused
+    KillContainerPolicyAction:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [POLICY_ACTION_KILL]
+        msg:
+          type: string
+          description: a message to send to the thing being killed
+    PolicyAction:
+      type: object
+      description: Functional behavior that can be enabled within a policy and should be performed if the condition of a policy is met. Certain actions may only make sense for policies of a particular type.
+      oneOf:
+        - $ref: '#/components/schemas/CapturePolicyAction'
+        - $ref: '#/components/schemas/StopContainerPolicyAction'
+        - $ref: '#/components/schemas/PauseContainerPolicyAction'
+        - $ref: '#/components/schemas/KillContainerPolicyAction'
+    PolicyV2Info:
+      type: object
+      properties:
+        name:
+          type: string
+          description: A short name for the policy
+          example: "Check filesystem activity"
+        description:
+          type: string
+          description: Description of policy
+          example: "Monitor all filesystem operations and look for suspicious or notable behavior"
+        severity:
+          type: integer
+          description: How severe is this policy when violated. Range from 0 to 7 included.
+          items:
+            type: string
+          example: 4
+        enabled:
+          type: boolean
+          description: True if the policy should be considered
+          example: true
+        scope:
+          type: string
+          description: Where the policy is being applied- Container, Host etc..
+          example: "container.image.repository = sysdig/agent"
+        ruleNames:
+          type: array
+          description: Array of rule names. (They must be names instead of ids, as the rules list view is by name, to account for multiple rules having the same name).
+          items:
+            type: string
+          example:
+            [
+              "Write below binary dir",
+              "Write below root",
+              "Write below monitored dir",
+            ]
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyAction"
+        type:
+          $ref: "#/components/schemas/PolicyType"
+    PolicyV2:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/PolicyV2Info"
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: Unique identifier representing a specific policy.
+              example: 1
+            version:
+              type: integer
+              description: Version of the object. Incremented on each update and used for optimistic locking
+              example: 18
+            createdOn:
+              type: integer
+              description: A timestamp (in milliseconds) of when the rules object was first created.
+              example: 1553702727177
+            modifiedOn:
+              type: integer
+              description: A timestamp (in milliseconds) of when the rules object was last modified.
+              example: 1553702738288
+            origin:
+              $ref: "#/components/schemas/RuntimePolicyObjectOrigin"
+            versionId:
+              $ref: "#/components/schemas/RuntimePolicyObjectVersionId"
+            notificationChannelIds:
+              type: array
+              items:
+                type: integer
+                example: [3, 5]
+            profile:
+              $ref: "#/components/schemas/ProfileModelMeta"
+    ProfileResult:
+      type: object
+      required:
+        - score
+      properties:
+        score:
+          type: integer
+          description: Value from 0 to 1000 representing the score of the category or subcategory.
+    ProfileProposalRule:
+      allOf:
+        - type: object
+          required:
+            - name
+            - ruleName
+          properties:
+            name:
+              type: string
+              description: Short description of the subcategory.
+              example: files rw
+            ruleName:
+              type: string
+              description: Name of the rule object.
+              example: Unexpected spawned process postgres in image a1b2c3d4e5f6
+        - $ref: "#/components/schemas/RuntimePolicyRuleType"
+        - $ref: "#/components/schemas/ProfileResult"
+    ProfileProposal:
+      allOf:
+        - type: object
+          required:
+            - subcategories
+          properties:
+            subcategories:
+              type: array
+              description: A category has at least one subcategory. Each subcategory refers to one rule and has its own score and status.
+              example: The category `fileSystemProposal` will have an `items` array with subcategories such as "files rw" which refers to a single rule.
+              items:
+                $ref: "#/components/schemas/ProfileProposalRule"
+        - $ref: "#/components/schemas/ProfileResult"
+    ProfileIndex:
+      allOf:
+        - $ref: "#/components/schemas/ProfileModelMeta"
+        - $ref: "#/components/schemas/ProfileResult"
+        - type: object
+          required:
+            - status
+            - profileGroupId
+            - processesProposal
+            - fileSystemProposal
+            - syscallProposal
+            - networkProposal
+            - containerImagesProposal
+          properties:
+            status:
+              type: string
+              description: Status of the model (learning or finalized).
+              enum: [LEARNING, FINALIZED]
+            profileGroupId:
+              type: integer
+              description: Identifier of the profile group.
+            processesProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            fileSystemProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            syscallProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            networkProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+            containerImagesProposal:
+              $ref: "#/components/schemas/ProfileProposal"
+    Profiles:
+      type: object
+      properties:
+        offset:
+          type: integer
+          description: The start offset used
+        limit:
+          type: integer
+          description: The limit used. 0 for no limit.
+        canLoadMore:
+          type: boolean
+          description: True if more results can be fetched.
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileIndex"
+          description: The profiles retrieved
+    ProfileGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifier of this profile group.
+        type:
+          type: string
+          description: Specify whether the profile engine aggregates data at the container or host level.
+          enum: [AT_HOSTS, AT_CONTAINERS]
+        aggregationKeys:
+          type: array
+          description: List of metrics used to identify the entity to be profiles (e.g. ["container.image"].
+          items:
+            type: string
+        uniqueIdKeys:
+          type: array
+          description: List of metrics used to identify a sub-entity inside an entity (e.g. ["container.id"].
+          items:
+            type: string
+        profileCount:
+          type: integer
+          description: Number of profiles computed within the profileGroup.
+          items:
+            type: integer
+        lastTimestampUs:
+          type: number
+          format: int64
+    ProfileLifeTracker:
+      type: object
+      description: keep track of the life of an entity
+      properties:
+        firstSeenUs:
+          type: integer
+        lastSeenUs:
+          type: integer
+        currentTimeUs:
+          type: integer
+        activeTimeUs:
+          type: integer
+    Profile:
+      type: object
+      properties:
+        profileGroupId:
+          type: integer
+          description: Identifier of the related profile group.
+        id:
+          type: string
+          description: UUID of this profile.
+        name:
+          type: string
+          description: Name of the profile inside the profileGroup.
+        mainKeyValues:
+          type: array
+          description: Values for the ProfileGroup.aggregationKeys.
+          items:
+            type: string
+        profileLifeTracker:
+          $ref: "#/components/schemas/ProfileLifeTracker"
+        proposedPolicy:
+          $ref: "#/components/schemas/PolicyV2"
+        proposedRules:
+          type: array
+          description: Array of rules referred to by the proposed policy in `proposedPolicy`, that have not yet been created. Each of the `ruleNames` in `proposedPolicy` must refer to a rule's `name` of either a proposed rule in this array or a rule that already exists.
+          items:
+            $ref: "#/components/schemas/RuntimePolicyRule"
+    ProfileActionResetResponse:
+      type: object
+      description: "Profile reset action response"
+      properties:
+        resetTimeUs:
+          type: integer

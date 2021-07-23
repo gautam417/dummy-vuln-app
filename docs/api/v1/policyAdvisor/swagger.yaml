@@ -1,0 +1,323 @@
+openapi: 3.0.0
+info:
+  title: Policy Advisor Secure API
+  description: API for Policy Advisor
+  version: "v1"
+paths:
+  /api/v1/policyAdvisor/podSecurityPolicies:
+    post:
+      summary: Create a podSecurityPolicy
+      description: Create a podSecurityPolicy from a k8s deployment yaml. Uses k8s-psp-advisor to perform the conversion.
+      tags:
+        - Policy Advisor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicySimulationK8sObject"
+      responses:
+        200:
+          description: An initial PSP that can be used as a part of the /simulations endpoints
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/K8sPsp"
+        400:
+          description: Some part of the provided deployment yaml was malformed/invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/policyAdvisor/simulations:
+    get:
+      summary: Get a list of simulations
+      description: Get a list of simulations for the current customer, including names/ids, etc.
+      tags:
+        - Policy Advisor
+      parameters:
+        - name: offset
+          in: query
+          required: true
+          schema:
+            type: number
+            format: integer
+          description: Return values from the simulations list at this position.
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: number
+            format: integer
+          description: The maximum number of items to return.
+        - name: dir
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [Asc, Desc]
+          description: Whether additional results should be increasing or decreasing relative to limit.
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter used to match against the name attribute of the policy simulation.
+      responses:
+        200:
+          description: The list of simulations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicySimulationsList"
+        400:
+          description: Some part of the request was invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        401:
+          description: The request is unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      summary: Create a new policy simulation
+      description: Create a new policy simulation
+      tags:
+        - Policy Advisor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicySimulationInfo"
+      responses:
+        200:
+          description: The just-created policy simulation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicySimulation"
+        400:
+          description: Some part of the request was invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        403:
+          description: The operation is forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        422:
+          description: Unprocessable Entity (Backend rejected due to validation errors)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/policyAdvisor/simulations/{id}:
+    get:
+      summary: Retrieve info on a single policy simulation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Policy Advisor
+      responses:
+        200:
+          description: The requested policy simulation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicySimulation"
+    put:
+      summary: Update a given policy simulation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolicySimulationInfo"
+      tags:
+        - Policy Advisor
+      responses:
+        200:
+          description: The now-updated policy simulation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicySimulation"
+        400:
+          description: Some part of the request was invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        422:
+          description: Unprocessable Entity (Backend rejected due to validation errors)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Delete the policy simulation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Policy Advisor
+      responses:
+        200:
+          description: The deleted policy simulation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicySimulation"
+        400:
+          description: Simulation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    Authorization:
+      type: http
+      scheme: bearer
+  schemas:
+    PolicySimulationK8sObject:
+      type: object
+      required: [k8sObj]
+      properties:
+        k8sObj:
+          type: string
+          description: A string containing a k8s deployment/pod/etc object, as a file bytes in base64
+          example: |+
+            apiVersion: extensions/v1beta1
+            kind: Deployment
+            metadata:
+              name: nginx-deployment
+    K8sPsp:
+      type: object
+      required: [result]
+      properties:
+        result:
+          type: string
+          example: |+
+            apiVersion: policy/v1beta1
+            kind: PodSecurityPolicy
+            metadata:
+              name: example
+              spec:
+                privileged: false  # Don't allow privileged pods!
+    PolicySimulationInfo:
+      type: object
+      required: [name, content]
+      properties:
+        name:
+          type: string
+          description: The name of the PSP/K8s Network Policy being used for this simulation.
+          example: nginx.psp
+        content:
+          type: string
+          description: The full contents of the policy file, base64 encoded, being used for the simulation
+          example: |+
+            apiVersion: policy/v1beta1
+            kind: PodSecurityPolicy
+            metadata:
+              name: example
+              spec:
+                privileged: false  # Don't allow privileged pods!
+        scope:
+          type: string
+          description: Where the policy is being applied- Container, Host etc..
+          example: "container.image.repository = mysql"
+        enabled:
+          type: boolean
+          description: If true, the policy simulation is currently enabled; otherwise disabled or does not exist
+          example: false
+    PolicySimulation:
+      type: object
+      required: [name, id, state, startTime, numEvents]
+      allOf:
+        - $ref: "#/components/schemas/PolicySimulationInfo"
+        - type: object
+          properties:
+            id:
+              type: number
+              format: int64
+              description: A unique identifier for this simulation, for this customer.
+              example: 6
+            version:
+              type: integer
+              description: Version of the object. Incremented on each update and used for optimistic locking
+              example: 18
+            startTime:
+              type: number
+              format: int64
+              description: If the simulation is "enabled", a UTC Unix time (in milliseconds) of when the rules object was first created.
+              example: 1553702727177
+            numEvents:
+              type: number
+              format: integer
+              description: The number of policy events that have been emitted so far for any policies created by this simulation.
+              example: 48
+    PolicySimulationsList:
+      type: object
+      required: [offset, limit, canLoadMore, items]
+      properties:
+        offset:
+          type: number
+          description: Return values from the simulations list at this position.
+        limit:
+          type: number
+          description: The maximum number of items to return.
+        canLoadMore:
+          type: boolean
+          description: Flag that indicates whether or not there are more results that can be loaded
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicySimulation"
+    Error:
+      type: object
+      required: [message, referenceId]
+      properties:
+        message:
+          type: string
+          description: Description of the error occured
+          example: Simulation not found
+        referenceId:
+          type: string
+          description: Reference id for error tracking
+          example: request_1TCy9vwpC78hwcnZdwtWMe5gsVT
+        errors:
+          type: array
+          description: Array of backend errors
+          items:
+            $ref: "#/components/schemas/BEError"
+    BEError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: Description of the error occured at backend
+          example: "Scope metric not present: agent.tag.secure-version"

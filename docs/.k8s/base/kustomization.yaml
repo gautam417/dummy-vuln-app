@@ -1,0 +1,4 @@
+resources:
+- docs-api-deployment.yaml
+- docs-api-service.yaml
+- docs-api-ingress.yaml
