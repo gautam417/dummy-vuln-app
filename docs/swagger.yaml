@@ -48,6 +48,10 @@ info:
   version: "v2"
   x-logo:
     url: "https://docs.sysdig.com/css/image/portal-logo.png"
+  contact:
+    name: "API Support"
+    url: "https://sysdig.com/company/technical-support/"
+    email: " doc-feedback@sysdig.com"
 externalDocs:
   description: Sysdig Product Documentation
   url: "https://docs.sysdig.com"
@@ -79,10 +83,10 @@ paths:
     $ref: "api/benchmarks/v2/swagger.yaml#/paths/~1api~1benchmarks~1v2~1tasks~1{taskId}~1run"
   /api/benchmarks/v2/tasks/{taskId}/result:
     $ref: "api/benchmarks/v2/swagger.yaml#/paths/~1api~1benchmarks~1v2~1tasks~1{taskId}~1result"
-  /api/benchmarks/v2/tasks/{taskId}/results/{resultId}:
-    $ref: "api/benchmarks/v2/swagger.yaml#/paths/~1api~1benchmarks~1v2~1tasks~1{taskId}~1results~1{resultId}"
-  /api/benchmarks/v2/tasks/{taskId}/results/{resultId}/csv:
-    $ref: "api/benchmarks/v2/swagger.yaml#/paths/~1api~1benchmarks~1v2~1tasks~1{taskId}~1results~1{resultId}~1csv"
+#  /api/benchmarks/v2/tasks/{taskId}/results/{resultId}:
+#    $ref: "api/benchmarks/v2/swagger.yaml#/paths/~1api~1benchmarks~1v2~1tasks~1{taskId}~1results~1{resultId}"
+#  /api/benchmarks/v2/tasks/{taskId}/results/{resultId}/csv:
+#    $ref: "api/benchmarks/v2/swagger.yaml#/paths/~1api~1benchmarks~1v2~1tasks~1{taskId}~1results~1{resultId}~1csv"
   /api/compliance/v1/status:
     $ref: "api/compliance/v1/swagger.yaml#/paths/~1api~1compliance~1v1~1status"
   /api/compliance/v1/standards:
