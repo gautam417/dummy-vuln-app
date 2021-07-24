@@ -294,8 +294,10 @@ paths:
     post:
       tags: [ "Compliance V2" ]
       summary: "Run now"
-      description: "Runs the Benchmark or Compliance Task with the specified task Id. If its a Compliance Task
-      then this endpoint will return a 403 status code. This endpoint will return a 200 status code if it is a Host Benchmark."
+      description: >
+        Runs the Benchmark or Compliance Task with the specified task Id.
+        If its a Compliance Task then this endpoint will return a 403 status code.
+        This endpoint will return a 200 status code if it is a Host Benchmark.
       parameters:
         - name: "taskId"
           in: "path"
