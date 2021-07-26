@@ -1,13 +1,10 @@
 {
   "shared": {
     "parameters": {
-      "no_parameter_description": "error",
-      "invalid_type_format_pair": "error",
       "content_type_parameter": "error",
       "accept_type_parameter": "error"
     },
     "schemas": {
-      "invalid_type_format_pair": "error",
       "property_case_collision": "error"
     }
   },
