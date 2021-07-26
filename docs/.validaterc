@@ -1,0 +1,38 @@
+{
+  "shared": {
+    "parameters": {
+      "no_parameter_description": "error",
+      "invalid_type_format_pair": "error",
+      "content_type_parameter": "error",
+      "accept_type_parameter": "error",
+    },
+    "schemas": {
+      "invalid_type_format_pair": "error",
+      "no_schema_description": "warning",
+      "no_property_description": "warning",
+      "description_mentions_json": "warning",
+      "array_of_arrays": "warning",
+      "inconsistent_property_type": [
+        "warning",
+        [
+          "code",
+          "default",
+          "type",
+          "value"
+        ]
+      ],
+      "property_case_collision": "error",
+      "undefined_required_properties": "warning"
+    },
+  },
+  "swagger2": {
+    "operations": {
+      "no_consumes_for_put_or_post": "error",
+      "get_op_has_consumes": "warning",
+      "no_produces": "warning"
+    }
+  },
+  "spectral": {
+    "rules": {}
+  }
+}
