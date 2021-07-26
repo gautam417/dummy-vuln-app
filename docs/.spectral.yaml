@@ -1,4 +1,4 @@
-extends: [[spectral:oas, off, off]]
+extends: [[spectral:oas, off], [spectral:oas3, off], [ibm:oas, off]]
 formats: [oas2, oas3]
 rules:
   no-eval-in-markdown: error
