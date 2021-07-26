@@ -5,7 +5,6 @@ on: [ pull_request, push ]
 jobs:
   openapi-validator:
     runs-on: ubuntu-latest
-    container: jamescooke/openapi-validator
 
     steps:
       - name: run the checkout action
@@ -17,10 +16,9 @@ jobs:
 #          PATTERNS: docs/**/*.yaml
 #          SET_ENV_NAME: GIT_DIFF_CONTENT
 
-#      - name: validate oas definition
-      - name: check version
+      - name: validate oas definition
         run: |
-            docker run jamescooke/openapi-validator:0.21.0 --version
+          docker run --volume "$PWD":/data jamescooke/openapi-validator swagger.yaml
         # Check only if there are differences in docs/* code
 #        if: ${{ env.GIT_DIFF_CONTENT }}
 #        uses: char0n/swagger-editor-validate@v1.2.1
