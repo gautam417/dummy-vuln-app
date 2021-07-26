@@ -18,7 +18,7 @@ jobs:
 
       - name: validate oas definition
         run: |
-          docker run --volume "$PWD":/data jamescooke/openapi-validator:latest docs/api/benchmarks/v2/swagger.yaml --config docs/config.json
+          docker run --volume "$PWD":/data jamescooke/openapi-validator:latest docs/api/benchmarks/v2/swagger.yaml --config docs/config.json --ruleset docs/spectral.yaml
         # Check only if there are differences in docs/* code
 #        if: ${{ env.GIT_DIFF_CONTENT }}
 #        uses: char0n/swagger-editor-validate@v1.2.1
