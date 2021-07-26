@@ -1,3 +1,23 @@
-extends: [[ibm:oas, off]]
+extends: [[spectral:oas, off]]
+formats: [oas2, oas3]
 rules:
-  operation-operationId-unique: true
+  no-eval-in-markdown: error
+  no-script-tags-in-markdown: 
+  openapi-tags: false
+  operation-description: false
+  operation-tags: false
+  operation-tag-defined: false
+  path-keys-no-trailing-slash: false
+  typed-enum: false
+  oas2-api-host: false
+  oas2-api-schemes: false
+  oas2-host-trailing-slash: false
+  oas2-valid-example: false
+  oas2-valid-definition-example: false
+  oas2-anyOf: false
+  oas2-oneOf: false
+  oas3-api-servers: false
+  oas3-examples-value-or-externalValue: false
+  oas3-server-trailing-slash: false
+  oas3-valid-example: false
+  oas3-valid-schema-example: false
