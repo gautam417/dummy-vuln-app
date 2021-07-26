@@ -1,18 +1,18 @@
 {
   "shared": {
     "parameters": {
-      "content_type_parameter": "error",
-      "accept_type_parameter": "error"
+      "content_type_parameter": "off",
+      "accept_type_parameter": "off"
     },
     "schemas": {
-      "property_case_collision": "error"
+      "property_case_collision": "off"
     }
   },
   "swagger2": {
     "operations": {
-      "no_consumes_for_put_or_post": "error",
-      "get_op_has_consumes": "warning",
-      "no_produces": "warning"
+      "no_consumes_for_put_or_post": "off",
+      "get_op_has_consumes": "off",
+      "no_produces": "off"
     }
   }
 }
