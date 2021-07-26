@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          repository: zalando/zally
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
@@ -18,8 +20,6 @@ jobs:
       - run: go version
       - name: Run Zally server
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
           git clone git@github.com:zalando/zally.git zally
           cd zally
           cd server/
