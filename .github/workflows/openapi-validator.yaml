@@ -1,0 +1,29 @@
+name: OpenAPI Validator
+
+on: [ pull_request, push ]
+
+jobs:
+  openapi-validator:
+    runs-on: ubuntu-latest
+    container:
+      image: jamescooke/openapi-validator
+
+    steps:
+      - name: run the checkout action
+        uses: actions/checkout@v2
+
+#      - name: run the git diff action
+#        uses: technote-space/get-diff-action@v4.1.1
+#        with:
+#          PATTERNS: docs/**/*.yaml
+#          SET_ENV_NAME: GIT_DIFF_CONTENT
+
+#      - name: validate oas definition
+      - name: check version
+        run: jamescooke/openapi-validator --version
+        # Check only if there are differences in docs/* code
+#        if: ${{ env.GIT_DIFF_CONTENT }}
+#        uses: char0n/swagger-editor-validate@v1.2.1
+#        with:
+#          swagger-editor-url: http://localhost/
+#          definition-file: ${{ env.GIT_DIFF_CONTENT }}
