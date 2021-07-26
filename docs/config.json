@@ -7,7 +7,7 @@
         "lower_snake_case"
       ],
       "no_summary": "off",
-      "no_array_responses": "error",
+      "no_array_responses": "off",
       "parameter_order": "off",
       "undefined_tag": "off",
       "unused_tag": "off",
@@ -17,23 +17,23 @@
       "pagination_style": "off"
     },
     "parameters": {
-      "no_parameter_description": "error",
+      "no_parameter_description": "off",
       "param_name_case_convention": [
-        "error",
+        "off",
         "lower_snake_case"
       ],
-      "invalid_type_format_pair": "error",
-      "content_type_parameter": "error",
-      "accept_type_parameter": "error",
+      "invalid_type_format_pair": "off",
+      "content_type_parameter": "off",
+      "accept_type_parameter": "off",
       "authorization_parameter": "off",
       "required_param_has_default": "off"
     },
     "paths": {
-      "missing_path_parameter": "error",
+      "missing_path_parameter": "off",
       "duplicate_path_parameter": "off",
       "snake_case_only": "off",
       "paths_case_convention": [
-        "error",
+        "off",
         "lower_snake_case"
       ]
     },
@@ -45,10 +45,10 @@
       "unused_security_scopes": "off"
     },
     "security": {
-      "invalid_non_empty_security_array": "error"
+      "invalid_non_empty_security_array": "off"
     },
     "schemas": {
-      "invalid_type_format_pair": "error",
+      "invalid_type_format_pair": "off",
       "snake_case_only": "off",
       "no_schema_description": "off",
       "no_property_description": "off",
@@ -64,10 +64,10 @@
         ]
       ],
       "property_case_convention": [
-        "error",
+        "off",
         "lower_snake_case"
       ],
-      "property_case_collision": "error",
+      "property_case_collision": "off",
       "enum_case_convention": [
         "off",
         "lower_snake_case"
@@ -75,7 +75,7 @@
       "undefined_required_properties": "off"
     },
     "walker": {
-      "no_empty_descriptions": "error",
+      "no_empty_descriptions": "off",
       "has_circular_references": "off",
       "$ref_siblings": "off",
       "duplicate_sibling_description": "off",
@@ -84,7 +84,7 @@
   },
   "swagger2": {
     "operations": {
-      "no_consumes_for_put_or_post": "error",
+      "no_consumes_for_put_or_post": "off",
       "get_op_has_consumes": "off",
       "no_produces": "off"
     }
@@ -95,7 +95,7 @@
     },
     "responses": {
       "no_success_response_codes": "off",
-      "protocol_switching_and_success_code": "error",
+      "protocol_switching_and_success_code": "off",
       "no_response_body": "off",
       "ibm_status_code_guidelines": "off"
     },
