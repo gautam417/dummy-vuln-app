@@ -1,0 +1,34 @@
+name: Zally Pull Request Builds
+
+on: [ push ]
+
+jobs:
+  build-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+      - run: go version
+      - name: Run Zally server
+        run: |
+          git clone git@github.com:zalando/zally.git zally
+          cd zally
+          cd server/
+          chmod +x gradlew
+          ./gradlew --console=plain bootRun > /dev/null &
+          echo $! > /tmp/zally_server.pid
+          cd ..
+          while ! echo "GET / HTTP/1.0\n" | nc localhost 8000; do sleep 1; done
+      - name: Build CLI
+        run: |
+          cd cli/zally
+          go build
+          cd ..
+          ./zally lint docs/swagger.yaml
