@@ -4,26 +4,12 @@
       "no_parameter_description": "error",
       "invalid_type_format_pair": "error",
       "content_type_parameter": "error",
-      "accept_type_parameter": "error",
+      "accept_type_parameter": "error"
     },
     "schemas": {
       "invalid_type_format_pair": "error",
-      "no_schema_description": "warning",
-      "no_property_description": "warning",
-      "description_mentions_json": "warning",
-      "array_of_arrays": "warning",
-      "inconsistent_property_type": [
-        "warning",
-        [
-          "code",
-          "default",
-          "type",
-          "value"
-        ]
-      ],
-      "property_case_collision": "error",
-      "undefined_required_properties": "warning"
-    },
+      "property_case_collision": "error"
+    }
   },
   "swagger2": {
     "operations": {
