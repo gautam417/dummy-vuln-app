@@ -227,24 +227,6 @@ components:
           example: Sysdig Prod
         regions:
           type: array
-          description: "A list of cloud regions where the cloud account is active."
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                description: "The cloud region identifier"
-                example: us-west-2
-              state:
-                type: string
-                description: "Whether the region is active"
-                example: active
-              createdAt:
-                type: "string"
-                example: "2020-11-15T01:16:02.469729Z"
-              lastSeenAt:
-                type: "string"
-                example: "2020-11-15T01:16:02.469729Z"
     AliasUpdateRequest:
       type: object
       description: Alias update request.
