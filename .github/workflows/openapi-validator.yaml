@@ -20,4 +20,4 @@ jobs:
         # Check only if there are differences in docs/* code
         if: ${{ env.GIT_DIFF_CONTENT }}
         run: |
-          docker run --volume "$PWD":/data jamescooke/openapi-validator:latest -v -s -c docs/.validaterc -r docs/.spectral.yaml ${{ env.GIT_DIFF_CONTENT }}
+          docker run --volume "$PWD":/data jamescooke/openapi-validator:latest -v -s -c docs/swagger-tools/.validaterc -r docs/swagger-tools/.spectral.yaml ${{ env.GIT_DIFF_CONTENT }}
