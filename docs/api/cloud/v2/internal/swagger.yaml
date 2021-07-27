@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Cloud Security API
   description: API for Cloud service
-  version: "v2"
+
 paths:
   /api/cloud/v2/accounts:
     post:
